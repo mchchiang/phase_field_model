@@ -16,6 +16,7 @@ public class PhaseFieldModel {
   // Lattice spacing dx = 1
   private int lx, ly;
   private double dt = 0.005;
+  private int nThreads = 1;
 
   private ArrayList<Double> idealCellVolume; // Ideal cell volume
   private ArrayList<Double> alpha; // Growth coefficient
@@ -92,11 +93,11 @@ public class PhaseFieldModel {
     }
   }
   
-  public void run(int nsteps, int threads) {
+  public void run(int nsteps) {
     
     running = true;
     
-    ExecutorService es = Executors.newFixedThreadPool(threads);
+    ExecutorService es = Executors.newFixedThreadPool(nThreads);
         
     for (int i = 0; i < nsteps && running; i++) {
       updateCellGroupVolume();
@@ -244,7 +245,7 @@ public class PhaseFieldModel {
     if (step % 1000 == 0) {
       notifyDataListeners(step);
       System.out.println("Step " + step);
-      try {
+/*      try {
         PrintWriter writer = new PrintWriter(new FileWriter("output.dat"));
         writer.print(cellGroups.get(0).toString());
         writer.close();
@@ -259,7 +260,7 @@ public class PhaseFieldModel {
           }
         }
         cmwriter.close();
-      } catch (IOException e) {} // Do nothing for now
+      } catch (IOException e) {} // Do nothing for now */
     }  
   }
   
@@ -296,6 +297,26 @@ public class PhaseFieldModel {
 
   public int getLy() {
     return ly;
+  }
+  
+  public void setDt(double dt){
+    if (dt > 0.0){
+      this.dt = dt;
+    }
+  }
+  
+  public double getDt(){
+    return dt;
+  }
+  
+  public void setNumOfThreads(int n){
+    if (n >= 1){
+      nThreads = n;
+    }
+  }
+  
+  public int getNumOfThreads(){
+    return nThreads;
   }
   
   public int getCellLx(int type){
@@ -448,7 +469,7 @@ public class PhaseFieldModel {
     model.setExclusionCoeff(0, 0, 1.0);
     model.setAdhesionCoeff(0, 0, 0.3);
     model.initSquareCellLattice(10, 10, 70, 70, 20, 20, 80, 0);
-    model.run(100000, 8);
+    model.run(100000);
   }
 
 }

@@ -47,8 +47,14 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 	private JLabel lblHeight;
 	private JTextField txtHeight;
 	
+	private JLabel lblNumOfThreads;
+	private JTextField txtNumOfThreads;
+	
 	private JLabel lblNumOfSteps;
 	private JTextField txtNumOfSteps;
+	
+	private JLabel lblDt;
+	private JTextField txtDt;
 	
 	private JButton btnRun;
 	private JButton btnStop;
@@ -65,6 +71,12 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 		
 		lblHeight = new JLabel("Height: ");
 		txtHeight = new JTextField(3);
+		
+		lblNumOfThreads = new JLabel("NThreads: ");
+		txtNumOfThreads = new JTextField(3);
+		
+		lblDt = new JLabel("dt: ");
+    txtDt = new JTextField(3);
 		
 		txtNumOfSteps = new JTextField(3);
 		lblNumOfSteps = new JLabel("Steps: ");
@@ -118,8 +130,12 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 		simParamsPanel.add(txtWidth);
 		simParamsPanel.add(lblHeight);
 		simParamsPanel.add(txtHeight);
+		simParamsPanel.add(lblDt);
+		simParamsPanel.add(txtDt);
 		simParamsPanel.add(lblNumOfSteps);
 		simParamsPanel.add(txtNumOfSteps);
+		simParamsPanel.add(lblNumOfThreads);
+    simParamsPanel.add(txtNumOfThreads);
 		simParamsPanel.add(btnRun);
     simParamsPanel.add(btnStop);
     simParamsPanel.add(btnPause);		
@@ -142,6 +158,8 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 				public void run(){					
 					int nx = Integer.parseInt(txtWidth.getText());
 					int ny = Integer.parseInt(txtHeight.getText());
+					int nThreads = Integer.parseInt(txtNumOfThreads.getText());
+					double dt = Double.parseDouble(txtDt.getText());
 					
 					int numOfCells = Integer.parseInt(txtNumOfCells.getText());
 					int cellLx = Integer.parseInt(txtCellWidth.getText());
@@ -162,6 +180,8 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 			    model.setVolumeCoeff(0, 1.0);
 			    model.setExclusionCoeff(0, 0, exclusionCoeff);
 			    model.setAdhesionCoeff(0, 0, adhesionCoeff);
+			    model.setNumOfThreads(nThreads);
+			    model.setDt(dt);
 			    model.initSquareCellLattice(10, 10, 70, 70, 
 			        cellLx, cellLy, numOfCells, 0);
 			    
@@ -172,7 +192,7 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 					btnStop.setEnabled(true);
 					btnPause.setEnabled(true);
 					
-					model.run(nsteps, 8);
+					model.run(nsteps);
 					
 					view.stopDrawingImage();
 					
