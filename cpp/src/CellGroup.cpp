@@ -6,14 +6,19 @@
  */
 
 #include <vector>
+#include <string>
+#include <sstream>
 #include <algorithm>
 
 #include "CellGroup.hpp"
 #include "Cell.hpp"
 
 using std::vector;
+using std::string;
+using std::ostringstream;
+using std::endl;
 
-CellGroup::CellGroup(int lx, int ly){
+CellGroup::CellGroup(int lx, int ly) {
   this->lx = lx;
   this->ly = ly;
   vector<double> zeros = vector<double>(ly, 0.0);
@@ -27,8 +32,8 @@ CellGroup::~CellGroup() {
 
 void CellGroup::updateField() {
   // reset the field to zero
-  for (size_t i {}; i < lx; i++) {
-    for (size_t j {}; j < ly; j++) {
+  for (int i = 0; i < lx; i++) {
+    for (int j = 0; j < ly; j++) {
       field[i][j] = 0.0;
     }
   }
@@ -39,8 +44,8 @@ void CellGroup::updateField() {
     int cellX = cell->getX();
     int cellY = cell->getY();
     int x, y;
-    for (size_t i {}; i < cellLx; i++) {
-      for (size_t j {}; j < cellLy; j++) {
+    for (int i = 0; i < cellLx; i++) {
+      for (int j = 0; j < cellLy; j++) {
         x = iwrap(cellX + i);
         y = jwrap(cellY + j);
         field[x][y] += cell->getVolume(i, j);
@@ -49,11 +54,22 @@ void CellGroup::updateField() {
   }
 }
 
-void CellGroup::addCell(Cell* cell){
+string CellGroup::printField() {
+  ostringstream oss;
+  for (int i = 0; i < lx; i++) {
+    for (int j = 0; j < ly; j++) {
+      oss << field[i][j] << " ";
+    }
+    oss << endl;
+  }
+  return oss.str();
+}
+
+void CellGroup::addCell(Cell* cell) {
   cells.push_back(cell);
 }
 
-void CellGroup::removeCell(Cell* cell){
+void CellGroup::removeCell(Cell* cell) {
   cells.erase(std::find(cells.begin(), cells.end(), cell));
 }
 
@@ -80,14 +96,16 @@ void CellGroup::set(int i, int j, double value) {
 
 int CellGroup::iwrap(int i) {
   int remainder = i % lx;
-  if (remainder >= 0)
+  if (remainder >= 0) {
     return remainder;
+  }
   return lx + remainder;
 }
 
 int CellGroup::jwrap(int j) {
   int remainder = j % ly;
-  if (remainder >= 0)
+  if (remainder >= 0) {
     return remainder;
+  }
   return ly + remainder;
 }

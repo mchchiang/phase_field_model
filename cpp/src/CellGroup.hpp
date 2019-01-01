@@ -9,6 +9,7 @@
 #define CELLGROUP_HPP_
 
 #include <vector>
+#include <string>
 
 #include "Field2D.hpp"
 #include "Cell.hpp"
@@ -34,6 +35,7 @@ public:
   void removeCell(Cell* cell);
 
   void updateField();
+  std::string printField();
 
   // Accessor methods
   int getNumOfCells() const;

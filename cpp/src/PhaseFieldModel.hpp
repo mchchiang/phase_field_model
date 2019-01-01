@@ -19,12 +19,12 @@ private:
   int lx {}, ly {};
   double dt {0.01};
 
-  std::vector<double> idealCellVolume;
-  std::vector<double> alpha;
-  std::vector<double> beta;
-  std::vector<double> gamma;
-  std::vector<double> eta;
-  std::vector<double> D;
+  std::vector<double> idealCellVolume; // Ideal cell volume
+  std::vector<double> alpha; // Growth coefficient
+  std::vector<double> beta; // Excluded volume coefficient
+  std::vector<double> gamma; // Regularisation for adhesion
+  std::vector<double> eta; // Adhesion coefficient
+  std::vector<double> D; // Surface-tension-like coefficient
   std::vector<int> cellLx;
   std::vector<int> cellLy;
 
@@ -39,8 +39,8 @@ protected:
   int jup(int j);
   int jdown(int j);
   int getTypeIndex(int type1, int type2);
-  double centralDiff(int i, int j, Field2D& field);
-  double forwardDiff(int i, int j, int comp, Field2D& field);
+  double centralDiff(int i, int j, Field2D* field);
+  double forwardDiff(int i, int j, int comp, Field2D* field);
 
 public:
   PhaseFieldModel(int lx, int ly, int numOfCellGroups);

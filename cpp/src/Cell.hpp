@@ -22,7 +22,7 @@ private:
   double deltaXCM {}, deltaYCM {};
   int cellType {};
   int setField {}, getField {};
-  const double INCELL {0.5};
+  const double INCELL {0.4};
   const double CMSHIFT {2.0};
 
   VolumeField volumeField {VolumeField(this)};
