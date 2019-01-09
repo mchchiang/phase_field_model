@@ -16,12 +16,13 @@ int main (int argc, char* argv[]) {
   double timeInc = stod(string(argv[3]), nullptr);
   PhaseFieldModel* model = new PhaseFieldModel(100, 100, 1);
   model->setDiffusionCoeff(0, 1.0);
-  model->setIdealCellVolume(0, 25);
+  model->setIdealCellVolume(0, 120);
   model->setRegulateCoeff(0, 1.0);
   model->setVolumeCoeff(0, 1.0);
   model->setExclusionCoeff(0, 0, 1.0);
-  model->setAdhesionCoeff(0, 0, 0.3);
-  model->initSquareCellLattice(10, 10, 70, 70, 40, 40, ncells, 0);
+  model->setAdhesionCoeff(0, 0, 0.0);
+  model->setMotility(0, 0.7);
+  model->initCellLattice(ncells, 0, 30, 30);
   model->setDt(timeInc);
   model->run(nsteps);
   delete model;

@@ -27,6 +27,7 @@ private:
   std::vector<double> D; // Surface-tension-like coefficient
   std::vector<int> cellLx;
   std::vector<int> cellLy;
+  std::vector<double> motility;
 
   std::vector<CellGroup*> cellGroups;
   std::vector<Cell*> cells;
@@ -38,7 +39,7 @@ protected:
   int idown(int i);
   int jup(int j);
   int jdown(int j);
-  int getTypeIndex(int type1, int type2);
+  int getTypeIndex(int type1, int type2) const;
   double centralDiff(int i, int j, Field2D* field);
   double forwardDiff(int i, int j, int comp, Field2D* field);
 
@@ -46,14 +47,14 @@ public:
   PhaseFieldModel(int lx, int ly, int numOfCellGroups);
   ~PhaseFieldModel();
 
-  void initSquareCellLattice(int x0, int y0, int xlen, int ylen,
-                            int cx, int cy, int numOfCells, int type);
+  void initCellLattice(int numOfCells, int cx, int cy, int type);
 
   void run(int nsteps);
   void updateCellGroupVolume(CellGroup* group);
   void updateCellVolume(Cell* cell);
   void updateCellField(Cell* cell);
   void updateCellCM(Cell* cell);
+  void updateVelocity(Cell* cell);
   void output(int step);
 
   double singleCellInteractions(Cell* cell, int i, int j);
@@ -61,28 +62,29 @@ public:
   double cellSubstrateInteractions(Cell* cell, int i, int j);
 
   // Accessor methods
-  int getLx();
-  int getLy();
+  int getLx() const;
+  int getLy() const;
   void setDt(double dt);
-  double getDt();
-  int getCellLx(int type);
-  int getCellLy(int type);
-  int getNumOfCells();
-  int getNumOfCellGroups();
+  double getDt() const;
+  int getCellLx(int type) const;
+  int getCellLy(int type) const;
+  int getNumOfCells() const;
+  int getNumOfCellGroups() const;
   CellGroup* getCellGroup(int type);
   void setIdealCellVolume(int type, double value);
-  double getIdealCellVolume(int type);
+  double getIdealCellVolume(int type) const;
   void setVolumeCoeff(int type, double value);
-  double getVolumeCoeff(int type);
+  double getVolumeCoeff(int type) const;
   void setExclusionCoeff(int type1, int type2, double value);
-  double getExclusionCoeff(int type1, int type2);
+  double getExclusionCoeff(int type1, int type2) const;
   void setAdhesionCoeff(int type1, int type2, double value);
-  double getAdhesionCoeff(int type1, int type2);
+  double getAdhesionCoeff(int type1, int type2) const;
   void setRegulateCoeff(int type, double value);
-  double getRegulateCoeff(int type);
+  double getRegulateCoeff(int type) const;
   void setDiffusionCoeff(int type, double value);
-  double getDiffusionCoeff(int type);
-
+  double getDiffusionCoeff(int type) const;
+  void setMotility(int type, double value);
+  double getMotility(int type) const;
 };
 
 #endif /* PHASEFIELDMODEL_HPP_ */

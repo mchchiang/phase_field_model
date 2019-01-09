@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <vector>
+#include <random>
 #include <iostream>
 
 #include "Cell.hpp"
@@ -32,21 +33,21 @@ Cell::Cell (int _x, int _y, int _lx, int _ly, int type) {
     cellField[k] = vector<vector<double> >(lx, zeros);
   }
 
+  // Initialise the random generator
+  std::random_device rd;
+  mt = std::mt19937(rd());
+  randDouble = std::uniform_real_distribution<double>(0.0, 1.0);
+
   this->setField = 1;
   this->getField = 1;
   this->volumeField = VolumeField(this);
 }
 
-void Cell::initSquareCell(int dx, int dy) {
-  int xStart = static_cast<int>(lx/2.0 - dx/2.0);
-  int xEnd = xStart + dx;
-  int yStart = static_cast<int>(ly/2.0 - dy/2.0);
-  int yEnd = yStart + dy;
-  for (int k = 0; k < 2; k++){
-    for (int i = xStart; i < xEnd; i++) {
-      for (int j = yStart; j < yEnd; j++) {
-        cellField[k][i][j] = 1.0;
-      }
+void Cell::initOnes(int x0, int y0, int dx, int dy) {
+  for (int i {}; i < dx && x0+i < lx; i++) {
+    for (int j {}; j < dy && y0+j < ly; j++) {
+      cellField[0][i+x0][j+y0] = 1.0;
+      cellField[1][i+x0][j+y0] = 1.0;
     }
   }
   vector<double> cm = calculateCM();
@@ -130,6 +131,12 @@ void Cell::updateCM() {
   }
 }
 
+void Cell::updateVelocity() {
+  theta += sqrt(6.0 * rotateDiff) * (randDouble(mt)*2-1);
+  px = cos(theta);
+  py = sin(theta);
+}
+
 void Cell::shiftCoordinates(int xShift, int yShift) {
   startUpdateCellField();
   int xStart, xEnd, yStart, yEnd;
@@ -196,6 +203,24 @@ int Cell::getX() const {
 
 int Cell::getY() const {
   return y;
+}
+
+void Cell::setTheta(double angle) {
+  theta = angle;
+  px = cos(theta);
+  py = sin(theta);
+}
+
+double Cell::getTheta() const {
+  return theta;
+}
+
+double Cell::getPx() const {
+  return px;
+}
+
+double Cell::getPy() const {
+  return py;
 }
 
 double Cell::getVolume(int i, int j) const {

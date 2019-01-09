@@ -39,6 +39,7 @@ PhaseFieldModel::PhaseFieldModel(int _lx, int _ly, int numOfCellGroups) {
   eta = vector<double>(numOfCellGroupsSq, 0.0);
   cellLx = vector<int>(numOfCellGroups, 0);
   cellLy = vector<int>(numOfCellGroups, 0);
+  motility = vector<double>(numOfCellGroups, 0.0);
 }
 
 PhaseFieldModel::~PhaseFieldModel() {
@@ -53,42 +54,37 @@ PhaseFieldModel::~PhaseFieldModel() {
   cells.clear();
 }
 
-void PhaseFieldModel::initSquareCellLattice(int x0, int y0, int xlen, int ylen,
-                                            int cx, int cy, int numOfCells,
-                                            int type) {
-  double volumePerCell = xlen*ylen/static_cast<double>(numOfCells);
-  int dx = static_cast<int>(floor(sqrt(volumePerCell)));
-  int dy = dx;
-  int x = x0;
-  int y = y0;
+void PhaseFieldModel::initCellLattice(int numOfCells, int type,
+                                      int cx, int cy) {
+  double sqrtNumOfCells {sqrt(numOfCells)};
+  int dx {static_cast<int>(floor(lx/sqrtNumOfCells))};
+  int dy {static_cast<int>(floor(ly/sqrtNumOfCells))};
+  int nx {lx/dx};
+  int ny {ly/dy};
+  cellLx[type] = cx;
+  cellLy[type] = cy;
+
+  int labx, laby, cellx, celly;
+  int x0 {(cx-dx)/2};
+  int y0 {(cy-dy)/2};
 
   for (int i = 0; i < numOfCells; i++) {
-    /*std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<int> randInt(0,1);
-    type = randInt(mt);*/
+    labx = dx*(i/ny);
+    laby = dy*(i%ny);
+    cellx = labx-x0;
+    celly = laby-y0;
     CellGroup* group = cellGroups[type];
-    cellLx[type] = cx;
-    cellLy[type] = cy;
-    double idealVolume = idealCellVolume[type];
-    int cellLen = static_cast<int>(floor(sqrt(idealVolume)));
-    Cell* cell = new Cell(x, y, cellLx[type], cellLy[type], type);
-    cell->initSquareCell(cellLen, cellLen);
+    Cell* cell = new Cell(cellx, celly, cellLx[type], cellLy[type], type);
+    cell->initOnes(x0, y0, dx, dy);
+    cell->setTheta(0.0);
     group->addCell(cell);
     cells.push_back(cell);
-    x += dx;
-    if (x > x0 + xlen){
-      x = x0;
-      y += dy;
-    }
   }
 }
 
 void PhaseFieldModel::run(int nsteps) {
 
   for (int i = 0; i < nsteps; i++) {
-    cout << "Step " << i << endl;
-
     for (int j = 0; j < cellGroups.size(); j++) {
       updateCellGroupVolume(cellGroups[j]);
     }
@@ -98,6 +94,7 @@ void PhaseFieldModel::run(int nsteps) {
       updateCellVolume(cells[j]);
       updateCellField(cells[j]);
       updateCellCM(cells[j]);
+      updateVelocity(cells[j]);
     }
 
     output(i);
@@ -105,8 +102,8 @@ void PhaseFieldModel::run(int nsteps) {
 }
 
 void PhaseFieldModel::output(int step) {
-  if (step % 50 == 0){
-
+  if (step % 1000 == 0){
+    cout << "Step " << step << endl;
     // Output lattice
     ofstream writer ("output.dat");
     for (int i = 0; i < lx; i++) {
@@ -131,6 +128,10 @@ void PhaseFieldModel::updateCellCM(Cell* cell) {
   cell->updateCM();
 }
 
+void PhaseFieldModel::updateVelocity(Cell* cell) {
+  cell->updateVelocity();
+}
+
 void PhaseFieldModel::updateCellField(Cell* cell) {
   // Apply fixed (Dirichlet) boundary conditions (u = 0 at boundaries)
   // i and j are coordinates in the cell's reference frame
@@ -151,9 +152,11 @@ void PhaseFieldModel::updateCellField(Cell* cell) {
 
 double PhaseFieldModel::singleCellInteractions(Cell* cell, int i, int j) {
   double u = cell->get(i, j);
+  double px = cell->getPx();
+  double py = cell->getPy();
   int type = cell->getCellType();
-  return D[type] * centralDiff(i, j, cell) +
-      0.05*(forwardDiff(i, j, 0, cell) + forwardDiff(i, j, 1, cell)) +
+  return D[type] * centralDiff(i, j, cell) - motility[type] * (
+      px * forwardDiff(i, j, 0, cell) - py * forwardDiff(i, j, 1, cell)) +
       u * (1 - u) * (u - 0.5 + getVolumeCoeff(type)
           * (getIdealCellVolume(type) - cell->getTotalVolume()));
 }
@@ -195,11 +198,11 @@ double PhaseFieldModel::cellSubstrateInteractions(Cell* cell, int i, int j) {
 }
 
 // Accessor methods
-int PhaseFieldModel::getLx() {
+int PhaseFieldModel::getLx() const {
   return lx;
 }
 
-int PhaseFieldModel::getLy() {
+int PhaseFieldModel::getLy() const {
   return ly;
 }
 
@@ -209,23 +212,23 @@ void PhaseFieldModel::setDt(double _dt) {
   }
 }
 
-double PhaseFieldModel::getDt() {
+double PhaseFieldModel::getDt() const {
   return dt;
 }
 
-int PhaseFieldModel::getCellLx(int type) {
+int PhaseFieldModel::getCellLx(int type) const {
   return cellLx[type];
 }
 
-int PhaseFieldModel::getCellLy(int type) {
+int PhaseFieldModel::getCellLy(int type) const {
   return cellLy[type];
 }
 
-int PhaseFieldModel::getNumOfCells() {
+int PhaseFieldModel::getNumOfCells() const {
   return static_cast<int>(cells.size());
 }
 
-int PhaseFieldModel::getNumOfCellGroups() {
+int PhaseFieldModel::getNumOfCellGroups() const {
   return static_cast<int>(cellGroups.size());
 }
 
@@ -239,7 +242,7 @@ void PhaseFieldModel::setIdealCellVolume(int type, double value) {
   }
 }
 
-double PhaseFieldModel::getIdealCellVolume(int type) {
+double PhaseFieldModel::getIdealCellVolume(int type) const {
   return idealCellVolume[type];
 }
 
@@ -249,29 +252,29 @@ void PhaseFieldModel::setVolumeCoeff(int type, double value) {
   }
 }
 
-double PhaseFieldModel::getVolumeCoeff(int type) {
+double PhaseFieldModel::getVolumeCoeff(int type) const {
   return alpha[type];
 }
 
-void PhaseFieldModel::setExclusionCoeff(int type1, int type2, double value){
+void PhaseFieldModel::setExclusionCoeff(int type1, int type2, double value) {
   if (value >= 0.0) {
     beta[getTypeIndex(type1, type2)] = value;
     beta[getTypeIndex(type2, type1)] = value;
   }
 }
 
-double PhaseFieldModel::getExclusionCoeff(int type1, int type2) {
+double PhaseFieldModel::getExclusionCoeff(int type1, int type2) const {
   return beta[getTypeIndex(type1, type2)];
 }
 
-void PhaseFieldModel::setAdhesionCoeff(int type1, int type2, double value){
+void PhaseFieldModel::setAdhesionCoeff(int type1, int type2, double value) {
   if (value >= 0.0) {
     eta[getTypeIndex(type1, type2)] = value;
     eta[getTypeIndex(type2, type1)] = value;
   }
 }
 
-double PhaseFieldModel::getAdhesionCoeff(int type1, int type2) {
+double PhaseFieldModel::getAdhesionCoeff(int type1, int type2) const {
   return eta[getTypeIndex(type1, type2)];
 }
 
@@ -281,18 +284,28 @@ void PhaseFieldModel::setRegulateCoeff(int type, double value) {
   }
 }
 
-double PhaseFieldModel::getRegulateCoeff(int type) {
+double PhaseFieldModel::getRegulateCoeff(int type) const {
   return gamma[type];
 }
 
-void PhaseFieldModel::setDiffusionCoeff(int type, double value){
+void PhaseFieldModel::setDiffusionCoeff(int type, double value) {
   if (value >= 0.0) {
     D[type] = value;
   }
 }
 
-double PhaseFieldModel::getDiffusionCoeff(int type) {
+double PhaseFieldModel::getDiffusionCoeff(int type) const {
   return D[type];
+}
+
+void PhaseFieldModel::setMotility(int type, double value) {
+  if (value >= 0.0) {
+    motility[type] = value;
+  }
+}
+
+double PhaseFieldModel::getMotility(int type) const {
+  return motility[type];
 }
 
 // Implement periodic boundary conditions
@@ -352,6 +365,6 @@ double PhaseFieldModel::centralDiff(int i, int j, Field2D* field) {
       + field->get(i, jdown(j)) - 4.0 * (field->get(i, j));
 }
 
-int PhaseFieldModel::getTypeIndex(int type1, int type2) {
+int PhaseFieldModel::getTypeIndex(int type1, int type2) const {
   return type1*getNumOfCellGroups()+type2;
 }
