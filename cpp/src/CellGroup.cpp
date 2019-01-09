@@ -18,9 +18,9 @@ using std::string;
 using std::ostringstream;
 using std::endl;
 
-CellGroup::CellGroup(int lx, int ly) {
-  this->lx = lx;
-  this->ly = ly;
+CellGroup::CellGroup(int _lx, int _ly) {
+  lx = _lx;
+  ly = _ly;
   vector<double> zeros = vector<double>(ly, 0.0);
   field = vector<vector<double> >(lx, zeros);
   cells = vector<Cell*>();

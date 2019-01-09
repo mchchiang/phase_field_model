@@ -13,7 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <omp.h>
+//#include <omp.h>
 
 #include "Cell.hpp"
 #include "CellGroup.hpp"
@@ -25,9 +25,9 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-PhaseFieldModel::PhaseFieldModel(int lx, int ly, int numOfCellGroups) {
-  this->lx = lx;
-  this->ly = ly;
+PhaseFieldModel::PhaseFieldModel(int _lx, int _ly, int numOfCellGroups) {
+  lx = _lx;
+  ly = _ly;
 
   int numOfCellGroupsSq = numOfCellGroups * numOfCellGroups;
   cellGroups = vector<CellGroup*>(numOfCellGroups, new CellGroup(lx, ly));
@@ -93,7 +93,7 @@ void PhaseFieldModel::run(int nsteps) {
       updateCellGroupVolume(cellGroups[j]);
     }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(auto)
     for (int j = 0; j < cells.size(); j++) {
       updateCellVolume(cells[j]);
       updateCellField(cells[j]);
@@ -142,8 +142,8 @@ void PhaseFieldModel::updateCellField(Cell* cell) {
     for (int j = 1; j < cy - 1; j++) {
       cell->set(i, j, cell->get(i, j) + dt * (
           singleCellInteractions(cell, i, j) +
-          cellCellInteractions(cell, i, j))); //+
-//          cellSubstrateInteractions(cell, i, j)));
+          cellCellInteractions(cell, i, j) +
+          cellSubstrateInteractions(cell, i, j)));
     }
   }
   cell->endUpdateCellField();
@@ -153,7 +153,7 @@ double PhaseFieldModel::singleCellInteractions(Cell* cell, int i, int j) {
   double u = cell->get(i, j);
   int type = cell->getCellType();
   return D[type] * centralDiff(i, j, cell) +
- //     0.05*(forwardDiff(i, j, 0, *cell) + forwardDiff(i, j, 1, *cell)) +
+      0.05*(forwardDiff(i, j, 0, cell) + forwardDiff(i, j, 1, cell)) +
       u * (1 - u) * (u - 0.5 + getVolumeCoeff(type)
           * (getIdealCellVolume(type) - cell->getTotalVolume()));
 }
@@ -203,9 +203,9 @@ int PhaseFieldModel::getLy() {
   return ly;
 }
 
-void PhaseFieldModel::setDt(double dt) {
-  if (dt > 0.0) {
-    this->dt = dt;
+void PhaseFieldModel::setDt(double _dt) {
+  if (_dt > 0.0) {
+    this->dt = _dt;
   }
 }
 
@@ -354,21 +354,4 @@ double PhaseFieldModel::centralDiff(int i, int j, Field2D* field) {
 
 int PhaseFieldModel::getTypeIndex(int type1, int type2) {
   return type1*getNumOfCellGroups()+type2;
-}
-
-int main (int argc, char* argv[]) {
-  int nsteps = stoi(string(argv[1]), nullptr, 10);
-  int ncells = stoi(string(argv[2]), nullptr, 10);
-  double timeInc = stod(string(argv[3]), nullptr);
-  PhaseFieldModel* model = new PhaseFieldModel(100, 100, 1);
-  model->setDiffusionCoeff(0, 1.0);
-  model->setIdealCellVolume(0, 25);
-  model->setRegulateCoeff(0, 1.0);
-  model->setVolumeCoeff(0, 1.0);
-  model->setExclusionCoeff(0, 0, 1.0);
-  model->setAdhesionCoeff(0, 0, 0.3);
-  model->initSquareCellLattice(10, 10, 70, 70, 40, 40, ncells, 0);
-  model->setDt(timeInc);
-  model->run(nsteps);
-  delete model;
 }

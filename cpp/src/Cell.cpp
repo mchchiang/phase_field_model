@@ -15,16 +15,16 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-Cell::Cell (int x, int y, int lx, int ly, int type) {
-  this->x = x;
-  this->y = y;
-  this->lx = lx;
-  this->ly = ly;
-  this->xcm = lx / 2.0;
-  this->ycm = ly / 2.0;
-  this->deltaXCM = 0.0;
-  this->deltaYCM = 0.0;
-  this->cellType = type;
+Cell::Cell (int _x, int _y, int _lx, int _ly, int type) {
+  x = _x;
+  y = _y;
+  lx = _lx;
+  ly = _ly;
+  xcm = lx / 2.0;
+  ycm = ly / 2.0;
+  deltaXCM = 0.0;
+  deltaYCM = 0.0;
+  cellType = type;
 
   // Create the cell field to zero
   vector<double> zeros {vector<double>(ly, 0.0)};
@@ -108,7 +108,6 @@ vector<double> Cell::calculateCM() {
 }
 
 void Cell::updateCM() {
-
   double oldXCM = xcm;
   double oldYCM = ycm;
 
@@ -132,7 +131,6 @@ void Cell::updateCM() {
 }
 
 void Cell::shiftCoordinates(int xShift, int yShift) {
-//  cout << "Shifting coordinates " << xShift << " " << yShift << endl;
   startUpdateCellField();
   int xStart, xEnd, yStart, yEnd;
   int zeroXStart, zeroXEnd, zeroYStart, zeroYEnd;
