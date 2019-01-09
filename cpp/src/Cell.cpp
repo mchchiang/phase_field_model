@@ -123,8 +123,8 @@ void Cell::updateCM() {
     int xShift = static_cast<int>(floor(deltaXCM));
     int yShift = static_cast<int>(floor(deltaYCM));
     shiftCoordinates(xShift, yShift);
-    deltaXCM = 0.0;
-    deltaYCM = 0.0;
+    deltaXCM -= xShift;
+    deltaYCM -= yShift;
     cm = calculateCM();
     xcm = cm[0];
     ycm = cm[1];
