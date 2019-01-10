@@ -13,7 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-//#include <omp.h>
+#include <omp.h>
 
 #include "Cell.hpp"
 #include "CellGroup.hpp"
@@ -68,6 +68,10 @@ void PhaseFieldModel::initCellLattice(int numOfCells, int type,
   int x0 {(cx-dx)/2};
   int y0 {(cy-dy)/2};
 
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> randDouble(0.0,1.0);
+
   for (int i = 0; i < numOfCells; i++) {
     labx = dx*(i/ny);
     laby = dy*(i%ny);
@@ -76,7 +80,8 @@ void PhaseFieldModel::initCellLattice(int numOfCells, int type,
     CellGroup* group = cellGroups[type];
     Cell* cell = new Cell(cellx, celly, cellLx[type], cellLy[type], type);
     cell->initOnes(x0, y0, dx, dy);
-    cell->setTheta(0.0);
+    cell->setTheta(randDouble(mt)*2.0*M_PI);
+    cell->setRotateDiff(0.001);
     group->addCell(cell);
     cells.push_back(cell);
   }
@@ -113,6 +118,15 @@ void PhaseFieldModel::output(int step) {
       writer << endl;
     }
     writer.close();
+
+    ofstream cmwriter ("cm.dat");
+    int x, y;
+    for (Cell* cell : cells) {
+      x = iwrap(cell->getX() + cell->getXCM());
+      y = jwrap(cell->getY() + cell->getYCM());
+      cmwriter << x << " " << y << endl;
+    }
+    cmwriter.close();
   }
 }
 

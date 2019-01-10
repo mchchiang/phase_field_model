@@ -205,6 +205,12 @@ int Cell::getY() const {
   return y;
 }
 
+void Cell::setRotateDiff(double diff) {
+  if (diff >= 0.0) {
+    rotateDiff = diff;
+  }
+}
+
 void Cell::setTheta(double angle) {
   theta = angle;
   px = cos(theta);
