@@ -13,7 +13,8 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-//#include <omp.h>
+#include <cstdio>
+#include <omp.h>
 
 #include "Cell.hpp"
 #include "CellGroup.hpp"
@@ -69,7 +70,7 @@ void PhaseFieldModel::initCellLattice(int numOfCells, int type,
   int y0 {(cy-dy)/2};
 
   for (int i = 0; i < numOfCells; i++) {
-    labx = dx*(i/ny);
+    labx = dx*(i/nx);
     laby = dy*(i%ny);
     cellx = labx-x0;
     celly = laby-y0;
@@ -82,8 +83,21 @@ void PhaseFieldModel::initCellLattice(int numOfCells, int type,
   }
 }
 
-void PhaseFieldModel::run(int nsteps) {
+void PhaseFieldModel::initSquareCell(int x, int y, int dx,
+                                     int dy, int cx, int cy, int type) {
+  CellGroup* group = cellGroups[type];
+  cellLx[type] = cx;
+  cellLy[type] = cy;
+  int x0 {(cx-dx)/2};
+  int y0 {(cy-dy)/2};
+  Cell* cell = new Cell(x, y, cellLx[type], cellLy[type], type);
+  cell->initOnes(x0,y0,dx,dy);
+  cell->setTheta(0.0);
+  group->addCell(cell);
+  cells.push_back(cell);
+}
 
+void PhaseFieldModel::run(int nsteps) {
   for (int i = 0; i < nsteps; i++) {
     for (int j = 0; j < cellGroups.size(); j++) {
       updateCellGroupVolume(cellGroups[j]);
@@ -105,7 +119,7 @@ void PhaseFieldModel::output(int step) {
   if (step % 1000 == 0){
     cout << "Step " << step << endl;
     // Output lattice
-    ofstream writer ("output.dat");
+    ofstream writer ("output.dat.tmp");
     for (int i = 0; i < lx; i++) {
       for (int j = 0; j < ly; j++) {
         writer << cellGroups[0]->get(i, j) << " ";
@@ -113,6 +127,7 @@ void PhaseFieldModel::output(int step) {
       writer << endl;
     }
     writer.close();
+    std::rename("output.dat.tmp", "output.dat");
   }
 }
 
@@ -155,8 +170,8 @@ double PhaseFieldModel::singleCellInteractions(Cell* cell, int i, int j) {
   double px = cell->getPx();
   double py = cell->getPy();
   int type = cell->getCellType();
-  return D[type] * centralDiff(i, j, cell) - motility[type] * (
-      px * forwardDiff(i, j, 0, cell) - py * forwardDiff(i, j, 1, cell)) +
+  return D[type] * centralDiff(i, j, cell) +
+      -motility[type] * (px * forwardDiff(i, j, 0, cell) - py * forwardDiff(i, j, 1, cell)) +
       u * (1 - u) * (u - 0.5 + getVolumeCoeff(type)
           * (getIdealCellVolume(type) - cell->getTotalVolume()));
 }

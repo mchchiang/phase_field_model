@@ -48,6 +48,7 @@ public:
   ~PhaseFieldModel();
 
   void initCellLattice(int numOfCells, int cx, int cy, int type);
+  void initSquareCell(int x, int y, int dx, int dy, int cx, int cy, int type);
 
   void run(int nsteps);
   void updateCellGroupVolume(CellGroup* group);

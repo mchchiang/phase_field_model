@@ -132,7 +132,7 @@ void Cell::updateCM() {
 }
 
 void Cell::updateVelocity() {
-  theta += sqrt(6.0 * rotateDiff) * (randDouble(mt)*2-1);
+  theta += sqrt(4.0 * rotateDiff) * (randDouble(mt)*2-1);
   px = cos(theta);
   py = sin(theta);
 }
