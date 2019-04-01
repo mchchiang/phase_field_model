@@ -14,6 +14,7 @@ using std::cout;
 using std::endl;
 
 int main (int argc, char* argv[]) {
+
   int argi {};
 
   if (argc != 7) {
@@ -37,7 +38,7 @@ int main (int argc, char* argv[]) {
   model->setExclusionCoeff(0, 0, 1.0);
   model->setAdhesionCoeff(0, 0, 3.0);
   model->setMotility(0, 0.0);
-//  model->initCellLattice(ncells, 0, cellL, cellL);
+
   model->initSquareCell(40, 44, 10, 10, cellL, cellL, 0);
   model->initSquareCell(40, 36, 10, 10, cellL, cellL, 0);
   model->initSquareCell(30, 24, 10, 10, cellL, cellL, 0);
@@ -68,6 +69,7 @@ int main (int argc, char* argv[]) {
   model->initSquareCell(5, 66, 10, 10, cellL, cellL, 0);
   model->initSquareCell(70, 14, 10, 10, cellL, cellL, 0);
   model->initSquareCell(70, 16, 10, 10, cellL, cellL, 0);
+
   model->setDt(timeInc);
   model->run(20000);
   model->setMotility(0, 1.0);

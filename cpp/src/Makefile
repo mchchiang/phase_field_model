@@ -1,5 +1,5 @@
 
-CXX := g++-8
+CXX := g++-8 #g++
 CXXFLAGS := -O3 -Wall -Wshadow -std=c++11 -fopenmp
 INC = -I./lib/ 
 LDFLAGS := -lm -lomp
@@ -15,7 +15,8 @@ LSRC := $(wildcard $(LDIR)/*.cpp)
 LOBJ := $(patsubst %.cpp, $(LODIR)/%.o, $(notdir $(LSRC)))
 SRC := $(wildcard *.cpp)
 OBJ := $(patsubst %.cpp, $(ODIR)/%.o, $(SRC))
-PRG := $(EDIR)/RunPhaseFieldModel #$(patsubst %.cpp,$(EDIR)/%,$(SRC))
+PRG := $(EDIR)/RunPhaseFieldModel # $(EDIR)/PhaseFieldModel #$(patsubst %.cpp,$(EDIR)/%,$(SRC))
+
 PRG_SUFFIX=
 BIN := $(patsubst %,%$(PRG_SUFFIX),$(PRG))
 

@@ -59,6 +59,7 @@ public:
   double getYCM() const;
   int getX() const;
   int getY() const;
+  void setRotateDiff(double diff);
   void setTheta(double angle);
   double getTheta() const;
   double getPx() const;
