@@ -19,6 +19,10 @@ public class CellGroup implements Field2D {
   public void addCell(Cell cell){
     cells.add(cell);
   }
+  
+  public void removeCell(Cell cell){
+    cells.remove(cell);
+  }
 
   public void updateField() {
     // reset the field to zero

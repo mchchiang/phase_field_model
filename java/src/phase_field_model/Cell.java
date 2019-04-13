@@ -102,6 +102,7 @@ public class Cell implements Field2D {
   }
 
   public void updateCM() {
+	  
     double oldXCM = xcm;
     double oldYCM = ycm;
     
@@ -142,7 +143,7 @@ public class Cell implements Field2D {
     if (yShift >= 0) {
       yStart = yShift;
       yEnd = ly;
-      zeroYStart = ly - xShift;
+      zeroYStart = ly - yShift;
       zeroYEnd = ly;
     } else {
       yStart = 0;

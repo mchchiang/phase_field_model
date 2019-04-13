@@ -185,6 +185,28 @@ public class PhaseFieldControlPanel extends JPanel implements ActionListener {
 			    model.initSquareCellLattice(10, 10, 70, 70, 
 			        cellLx, cellLy, numOfCells, 0);
 			    
+	/*		    model = new PhaseFieldModel(nx, ny, 2);
+          model.setDiffusionCoeff(0, 1.0);
+          model.setIdealCellVolume(0, 25.0);
+          model.setRegulateCoeff(0, 1.0);
+          model.setVolumeCoeff(0, 1.0);
+          model.setDiffusionCoeff(1, 1.0);
+          model.setIdealCellVolume(1, 25.0);
+          model.setRegulateCoeff(1, 1.0);
+          model.setVolumeCoeff(1, 1.0);
+          model.setExclusionCoeff(0, 0, 1.0);
+          model.setExclusionCoeff(1, 1, 1.0);
+          model.setExclusionCoeff(1, 0, 1.0);
+          model.setAdhesionCoeff(0, 0, 1.0);
+          model.setAdhesionCoeff(1, 1, 0.5);
+          model.setAdhesionCoeff(1, 0, 0.0);
+          model.setNumOfThreads(nThreads);
+          model.setDt(dt);
+          model.initSquareCellLattice(10, 10, 70, 70, 
+              cellLx, cellLy, numOfCells, 0);
+ //         model.initSquareCellLattice(10, 40, 20, 20, 
+//              cellLx, cellLy, 10, 1);*/
+			    
 					view.setModel(model);
 					view.initImage();
 					

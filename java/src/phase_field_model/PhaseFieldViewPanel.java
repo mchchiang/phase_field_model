@@ -22,7 +22,7 @@ public class PhaseFieldViewPanel extends JPanel
 	
 	private PhaseFieldModel model;
 	private int numOfColourBins = 20;
-	private Color [] colours;
+	private Color [][] colours;
 	private double minVal = 0.0;
 	private double maxVal = 1.0;
 	private double incVal = (maxVal-minVal)/numOfColourBins;
@@ -56,14 +56,16 @@ public class PhaseFieldViewPanel extends JPanel
 	 * Set the colour for each spin
 	 */
 	public void setColours(){
-		colours = new Color [numOfColourBins];
+		colours = new Color [2][numOfColourBins];
 		int r, g, b;
-		double period = 1.5*Math.PI;
-		for (int i = 0; i < numOfColourBins; i++){
-		  r = (int) (Math.sin(period/(double) i + 0)*127.0 + 128.0);
-		  g = (int) (Math.sin(period/(double) i + period/3.0)*127.0 + 128.0);
-		  b = (int) (Math.sin(period/(double) i + 2.0*period/3.0)*127.0 + 128.0);
-			colours[i] = new Color(r, g, b);
+		for (int i = 0; i < 2; i++){
+		  for (int j = 0; j < numOfColourBins; j++){
+		    double period = (i+1)*Math.PI;
+		    r = (int) (Math.sin(period/(double) j + 0)*127.0 + 128.0);
+		    g = (int) (Math.sin(period/(double) j + period/3.0)*127.0 + 128.0);
+		    b = (int) (Math.sin(period/(double) j + 2.0*period/3.0)*127.0 + 128.0);
+		    colours[i][j] = new Color(r, g, b);
+		  }
 		}
 	}
 	
@@ -120,17 +122,27 @@ public class PhaseFieldViewPanel extends JPanel
 	public void drawImage(){
 	  int width = model.getLx();
     int height = model.getLy();
-	  CellGroup group = model.getCellGroup(0);
-    double value;
-    int binIndex;
+	  CellGroup group1 = model.getCellGroup(0);
+//	  CellGroup group2 = model.getCellGroup(1);
+    double value1, value2;
+    int binIndex1, binIndex2;
     //draw an initial image of the cell
     for (int i = 0; i < width; i++){
       for (int j = 0; j < height; j++){
-        value = group.get(i, j);
-        if (value >= maxVal) value = maxVal-0.00001;
-        if (value < minVal) value = minVal;
-        binIndex = (int) (value / incVal);
-        fg.setRGB(i, j, colours[binIndex].getRGB());
+        value1 = group1.get(i, j);
+//        value2 = group2.get(i, j);
+        if (value1 >= maxVal) value1 = maxVal-0.00001;
+        if (value1 < minVal) value1 = minVal;
+        binIndex1 = (int) (value1 / incVal);
+/*        if (value2 >= maxVal) value2 = maxVal-0.00001;
+        if (value2 < minVal) value2 = minVal;
+        binIndex2 = (int) (value2 / incVal);
+        if (value1 > value2){
+          fg.setRGB(i, j, colours[0][binIndex1].getRGB());      
+        } else {
+          fg.setRGB(i, j, colours[1][binIndex2].getRGB());
+        }*/
+        fg.setRGB(i, j, colours[0][binIndex1].getRGB());
       }
     }
 	}

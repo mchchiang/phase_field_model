@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,12 +63,16 @@ public class PhaseFieldModel {
     int dy = dx;
     int x = x0;
     int y = y0;
-    CellGroup group = cellGroups.get(type);
-    cellLx.set(type, cx);
-    cellLy.set(type, cy);
-    double idealVolume = idealCellVolume.get(type);
-    int cellLen = (int) Math.floor(Math.sqrt(idealVolume));
+    
     for (int i = 0; i < numOfCells; i++){
+      Random rand = new Random(); 
+//      type = rand.nextInt(2);
+      type = rand.nextInt(1);
+      CellGroup group = cellGroups.get(type);
+      cellLx.set(type, cx);
+      cellLy.set(type, cy);
+      double idealVolume = idealCellVolume.get(type);
+      int cellLen = (int) Math.floor(Math.sqrt(idealVolume));
       Cell cell = new Cell(x, y, cellLx.get(type), cellLy.get(type), type);
       cell.initSquareCell(cellLen, cellLen);
       group.addCell(cell);
@@ -188,7 +193,7 @@ public class PhaseFieldModel {
     double u = cell.get(i, j);
     int type = cell.getCellType();
     return D.get(type) * centralDiff(i, j, cell) + 
-        0.05*(forwardDiff(i, j, 0, cell) + forwardDiff(i, j, 1, cell)) +
+//        0.05*(forwardDiff(i, j, 0, cell) + forwardDiff(i, j, 1, cell)) +
         u * (1 - u) * (u - 0.5 + getVolumeCoeff(type)
             * (getIdealCellVolume(type) - cell.getTotalVolume()));
   }
@@ -220,7 +225,7 @@ public class PhaseFieldModel {
 
     // Compute regularisation effect
     double regularisation = getRegulateCoeff(type) * volumeFieldCentralDiff;
-
+    
     return u * (1 - u) * (exclusion + adhesion + regularisation);
   }
 
@@ -243,8 +248,9 @@ public class PhaseFieldModel {
   
   public void output(int step) {
     if (step % 1000 == 0) {
-      notifyDataListeners(step);
       System.out.println("Step " + step);
+      notifyDataListeners(step);
+
 /*      try {
         PrintWriter writer = new PrintWriter(new FileWriter("output.dat"));
         writer.print(cellGroups.get(0).toString());
@@ -468,8 +474,9 @@ public class PhaseFieldModel {
     model.setVolumeCoeff(0, 1.0);
     model.setExclusionCoeff(0, 0, 1.0);
     model.setAdhesionCoeff(0, 0, 0.3);
-    model.initSquareCellLattice(10, 10, 70, 70, 20, 20, 80, 0);
-    model.run(100000);
+    model.initSquareCellLattice(10, 10, 70, 70, 40, 40, 1, 0);
+    model.setDt(0.01);
+    model.run(10000);
   }
 
 }
