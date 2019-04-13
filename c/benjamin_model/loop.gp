@@ -1,7 +1,7 @@
 set xrange [1:100]
 set yrange [1:100]
-
-set palette defined (0 "white", 2 "blue")
+set cbrange [0:2]
+#set palette defined (0 "white", 2 "blue")
 p 'output.dat' matrix w image, 'cm.dat' u 3:2 w points lc "white" lt 7
 while (1) {
   stat = system("wc output.dat | awk '{print $1}'")
