@@ -10,7 +10,7 @@ typedef struct PhaseFieldModel {
   int ly;
   int numOfCells;
   double dt;
-  double piR2;
+  double piR2phi02;
   double phi0;
   double kappa;
   double alpha;

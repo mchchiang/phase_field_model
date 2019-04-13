@@ -14,7 +14,7 @@ void initModel(PhaseFieldModel* model, int _lx, int _ly, int ncells) {
   model->numOfCells = ncells;
   model->dt = 0.01;
   model->phi0 = 1.0;
-  model->piR2 = M_PI;
+  model->piR2phi02 = M_PI;
   model->kappa = 0.0;
   model->alpha = 0.0;
   model->mu = 0.0;
@@ -160,10 +160,9 @@ double singleCellInteractions(PhaseFieldModel* model, Cell* cell,
   double advection =  -model->motility *
     (cell->vx * gradient(model, i, j, 0, cellField) -
      cell->vy * gradient(model, i, j, 1, cellField));
-  double fixVolume = 2.0 * model->mu * phi *
-    (1.0 - 1.0/(model->piR2 * model->phi0 * model->phi0) * cell->volume);
+  double fixVolume = 4.0 * model->mu * phi / (model->piR2phi02) *
+    (1.0 - 1.0/(model->piR2phi02) * cell->volume);
   return cahnHilliard + fixVolume + advection;
-  //  return cahnHilliard + fixVolume;
 }
 
 double cellCellInteractions(PhaseFieldModel* model, Cell* cell, int i, int j) {

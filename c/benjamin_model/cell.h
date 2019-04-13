@@ -6,6 +6,7 @@
 #include "mtwister.h"
 
 #define CMSHIFT 2.0
+#define M_PI 3.141592653589793
 
 typedef struct {
   double** field[2];

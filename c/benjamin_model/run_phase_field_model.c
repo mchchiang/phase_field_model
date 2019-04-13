@@ -71,7 +71,7 @@ int main (int argc, char* argv[]) {
   initModel(model, L, L, ncells);
   model->phi0 = phi0;
   model->M = M;
-  model->piR2 = M_PI * R * R;
+  model->piR2phi02 = M_PI * R * R * phi0 * phi0;
   model->kappa = kappa;
   model->alpha = alpha;
   model->mu = mu;
