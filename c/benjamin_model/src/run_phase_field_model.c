@@ -23,9 +23,9 @@ int main (int argc, char* argv[]) {
     return 1;
   }
 
-  char line [80];
+  char line [80], cmFile[500], shapeFile[500];
   double phi0, M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
-  int cellL, L, nequil, nsteps, ncells;
+  int cellLx, cellLy, lx, ly, nequil, nsteps, ncells, seed;
   int nparams = 0;
   while (fgets(line, sizeof(line), file) != NULL) {
     nparams += sscanf(line, "alpha = %lf", &alpha);
@@ -35,23 +35,30 @@ int main (int argc, char* argv[]) {
     nparams += sscanf(line, "kappa = %lf", &kappa);
     nparams += sscanf(line, "mu = %lf", &mu);
     nparams += sscanf(line, "epsilon = %lf", &epsilon);
-    nparams += sscanf(line, "cellL = %d", &cellL);
-    nparams += sscanf(line, "L = %d", &L);
+    nparams += sscanf(line, "cellLx = %d", &cellLx);
+    nparams += sscanf(line, "cellLy = %d", &cellLy);
+    nparams += sscanf(line, "lx = %d", &lx);
+    nparams += sscanf(line, "ly = %d", &ly);
     nparams += sscanf(line, "nsteps = %d", &nsteps);
     nparams += sscanf(line, "nequil = %d", &nequil);
     nparams += sscanf(line, "ncells = %d", &ncells);
     nparams += sscanf(line, "dt = %lf", &dt);
     nparams += sscanf(line, "Dr = %lf", &Dr);
     nparams += sscanf(line, "v = %lf", &v);
+    nparams += sscanf(line, "cm_file = %s", cmFile);
+    nparams += sscanf(line, "shape_file = %s", shapeFile);
+    nparams += sscanf(line, "seed = %d", &seed);
   }
 
-  if (nparams != 15) {
+  if (nparams != 20) {
     printf("Not enough parameters specified!\n");
     return 1;
   } else {
     printf("Read parameters:\n");
-    printf("L = %d\n", L);
-    printf("cellL = %d\n", cellL);
+    printf("lx = %d\n", lx);
+    printf("ly = %d\n", ly);
+    printf("cellLx = %d\n", cellLx);
+    printf("cellLy = %d\n", cellLy);
     printf("ncells = %d\n", ncells);
     printf("phi0 = %.5f\n", phi0);
     printf("mu = %.5f\n", mu);
@@ -63,12 +70,14 @@ int main (int argc, char* argv[]) {
     printf("v = %.5f\n", v);
     printf("M = %.5f\n", M);
     printf("R = %.5f\n", R);
+    printf("seed = %d\n", seed);
+    printf("cm_file = %s\n", cmFile);
+    printf("shape)file = %s\n", shapeFile);
   }
 
   printf("Initialising model ...\n");
   
-  PhaseFieldModel* model = (PhaseFieldModel*) malloc(sizeof(PhaseFieldModel));
-  initModel(model, L, L, ncells);
+  PhaseFieldModel* model = createModel(lx, ly, ncells);
   model->phi0 = phi0;
   model->M = M;
   model->piR2phi02 = M_PI * R * R * phi0 * phi0;
@@ -78,9 +87,13 @@ int main (int argc, char* argv[]) {
   model->Dr = Dr;
   model->epsilon = epsilon;  
   model->motility = 0.0;
-  model->cellLx = cellL;
-  model->cellLy = cellL;
-  int x = 0, y = 0;
+  model->cellLx = cellLx;
+  model->cellLy = cellLy;
+
+  initCellsFromFile(model, cmFile, shapeFile, seed);
+  // Init cell in the middle
+  // initSquareCell(model, 0, 0, 0, (int)R, (int)R);
+  /*  int x = 0, y = 0;
   for (int i = 0; i < ncells; i++) {
     initSquareCell(model, i, x, y, (int)R, (int)R);
     y += (int) (R*1.4);
@@ -88,7 +101,7 @@ int main (int argc, char* argv[]) {
       y = (int) (x / R + (R*0.5));
       x += (int) (R*1.2);
     }
-  }
+    }*/
 
   printf("Done initialisation.\n");
   

@@ -4,6 +4,7 @@
 #define PHASE_FIELD_MODEL_H
 
 #include "cell.h"
+#include "dump.h"
 
 typedef struct PhaseFieldModel {
   int lx;
@@ -23,13 +24,17 @@ typedef struct PhaseFieldModel {
   int cellLy;
   Cell** cells;
   double** cellTypeField;
+  Dump* dump[2];
 } PhaseFieldModel;
 
-void initModel(PhaseFieldModel* model, int lx, int ly,int ncells);
+PhaseFieldModel* createModel(int lx, int ly,int ncells);
 void deleteModel(PhaseFieldModel* model);
 
 void initSquareCell(PhaseFieldModel* model, int index,
-		    int x, int y, int dx, int dy);		    
+		    int x, int y, int dx, int dy);
+
+void initCellsFromFile(PhaseFieldModel* model, char* cmFile, char* shapeFile,
+		       int seed);
 
 void run(PhaseFieldModel* model, int nsteps);
 void output(PhaseFieldModel* model, int step);

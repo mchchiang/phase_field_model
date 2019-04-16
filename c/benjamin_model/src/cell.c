@@ -8,8 +8,10 @@
 #include "array.h"
 #include "mtwister.h"
 
-void initCell(Cell* cell, int _x, int _y, int _lx, int _ly,
-	      double _incell, int seed) {
+Cell* initCell(int _x, int _y, int _lx, int _ly, double _incell, int seed) {
+  // Allocate memory for a cell
+  Cell* cell = (Cell*) malloc(sizeof(Cell));
+  
   cell->x = _x;
   cell->y = _y;
   cell->lx = _lx;
@@ -35,6 +37,7 @@ void initCell(Cell* cell, int _x, int _y, int _lx, int _ly,
   cell->theta = genRand(&cell->random)*2.0*M_PI;
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
+  return cell;
 }
 
 void deleteCell(Cell* cell) {
@@ -42,6 +45,17 @@ void deleteCell(Cell* cell) {
     free(cell->field[i]);
   }
   free(cell);
+}
+
+void initField(Cell* cell, double** lattice) {
+  for (int i = 0; i < cell->lx; i++) {
+    for (int j = 0; j < cell->ly; j++) {
+      cell->field[0][i][j] = lattice[i][j];
+      cell->field[1][i][j] = lattice[i][j];
+    }
+  }
+  calculateCM(cell, &cell->xcm, &cell->ycm);
+  updateVolume(cell);
 }
 
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0) {

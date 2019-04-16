@@ -6,7 +6,10 @@
 #include "mtwister.h"
 
 #define CMSHIFT 2.0
-#define M_PI 3.141592653589793
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif
 
 typedef struct {
   double** field[2];
@@ -31,10 +34,11 @@ typedef struct {
   double incell;
 } Cell;
 
-void initCell(Cell* cell, int x, int y, int lx, int ly,
-	      double incell, int seed);
+Cell* initCell(int x, int y, int lx, int ly,
+	       double incell, int seed);
 void deleteCell(Cell* cell);
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0);
+void initField(Cell* cell, double** field);
 void updateCM(Cell* cell);
 void updateVolume(Cell* cell);
 void updateVelocity(Cell* cell);

@@ -7,8 +7,10 @@
 #include "array.h"
 #include "cell.h"
 #include "phase_field_model.h"
+#include "dump.h"
 
-void initModel(PhaseFieldModel* model, int _lx, int _ly, int ncells) {
+PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
+  PhaseFieldModel* model = (PhaseFieldModel*) malloc(sizeof(PhaseFieldModel));
   model->lx = _lx;
   model->ly = _ly;
   model->numOfCells = ncells;
@@ -25,10 +27,10 @@ void initModel(PhaseFieldModel* model, int _lx, int _ly, int ncells) {
   model->cellLx = 1;
   model->cellLy = 1;
   model->cells = (Cell**) malloc(sizeof(Cell*)*ncells);
-  for (int i = 0; i < ncells; i++) {
-    model->cells[i] = (Cell*) malloc(sizeof(Cell));
-  }
   model->cellTypeField = create2DDoubleArray(model->lx, model->ly);
+  model->dump[0] = createFieldDump("field.dat", 1000);
+  model->dump[1] = createCMDump("cm.dat", 1000);
+  return model; 
 }
 
 void deleteModel(PhaseFieldModel* model) {
@@ -39,23 +41,80 @@ void deleteModel(PhaseFieldModel* model) {
   }
   free(model->cells);
   free(model->cellTypeField);
+  for (int i = 0; i < 2; i++) {
+    deleteDump(model->dump[i]);
+  }
   free(model);
 }
 
 void initSquareCell(PhaseFieldModel* model, int index, int x, int y,
 		    int dx, int dy) {
-  Cell* cell = model->cells[index];
   int clx = model->cellLx;
   int cly = model->cellLy;
-  initCell(cell, x, y, clx, cly, model->phi0/2.0, index);
+  Cell* cell = initCell(x, y, clx, cly, model->phi0/2.0, index);
+  model->cells[index] = cell;
   int x0 = (clx-dx)/2;
   int y0 = (cly-dy)/2;
   initFieldSquare(cell, x0, y0, dx, dy, model->phi0);
 }
 
+void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
+		       char* shapeFile, int seed) {
+  FILE* fcm = fopen(cmFile, "r");
+  if (fcm == NULL) {
+    printf("Problem with opening the centre of mass file!\n");
+    return;
+  }
+
+  FILE* fshape = fopen(shapeFile, "r");
+  if (fshape == NULL) {
+    printf("Problem with opening the shape file!\n");
+    return;
+  }
+
+  char line [80];
+  int nvar, x, y;
+  double val;
+  int clx = model->cellLx;
+  int cly = model->cellLy;
+
+  // Allocate memory for the template field
+  double** field = create2DDoubleArray(clx, cly);
+  // Read the template field from the shape file
+  while (fgets(line, sizeof(line), fshape) != NULL) {
+    nvar = sscanf(line, "%d %d %lf", &x, &y, &val);
+    if (nvar == 3 && x >= 0 && x < clx && y >= 0 && y < cly) {
+      field[x][y] = val;
+    }
+  }
+  
+  int index;
+  double xcm, ycm;
+  int count = 0;
+  Cell* cell;
+  while (fgets(line, sizeof(line), fcm) != NULL) {
+    nvar = sscanf(line, "%d %lf %lf", &index, &xcm, &ycm);
+    if (nvar == 3) {
+      x = (int)(xcm-clx/2);
+      y = (int)(ycm-cly/2);
+      cell = initCell(x, y, clx, cly, model->phi0/2.0, index+seed);
+      model->cells[index] = cell;
+      initField(cell, field);
+      count++;
+    }
+  }
+
+  if (count != model->numOfCells) {
+    printf("Not all cells initialised!\n");
+  }
+  free(field);
+  fclose(fcm);
+  fclose(fshape);
+}
+
 void run(PhaseFieldModel* model, int nsteps) {
   printf("Running model ...\n");
-  for (int n = 0; n < nsteps; n++) {
+  for (int n = 1; n <= nsteps; n++) {
     // Update each cell type field
     // Reset fields to zero
     for (int i = 0; i < model->lx; i++) {
@@ -88,7 +147,7 @@ void run(PhaseFieldModel* model, int nsteps) {
     int i;
 #pragma omp parallel default(none) shared(model) private(i, cell) 
     {
-#pragma omp for schedule(dynamic, 1)
+#pragma omp for schedule(dynamic, 4)
     for (i = 0; i < model->numOfCells; i++) {
       cell = model->cells[i];
       updateVolume(cell);
@@ -104,32 +163,9 @@ void run(PhaseFieldModel* model, int nsteps) {
 void output(PhaseFieldModel* model, int step) {
   if (step % 1000 == 0) {
     printf("Step %d\n", step);
-    FILE* f = fopen("output.dat.tmp", "w");
-    for (int i = 0; i < model->lx; i++) {
-      for (int j = 0; j < model->ly; j++) {
-	fprintf(f, "%.5f ", sqrt(model->cellTypeField[i][j]));
-      }
-      fprintf(f, "\n");
-    }
-    fclose(f);
-    //    char buf[80];
-    //sprintf(buf, "output.dat.%d", step);
-    //rename("output.dat.tmp", buf);
-    rename("output.dat.tmp", "output.dat");
-    
-    FILE* fcm = fopen("cm.dat.tmp", "w");
-    Cell* cell;
-    double x, y, cx, cy;
-    for (int i = 0; i < model->numOfCells; i++) {
-      cell = model->cells[i];
-      cx = cell->x;
-      cy = cell->y;
-      x = iwrap(model, cx+cell->xcm);
-      y = jwrap(model, cy+cell->ycm);
-      fprintf(fcm, "%d %.5f %.5f\n", i, x, y);
-    }
-    fclose(fcm);
-    rename("cm.dat.tmp", "cm.dat");
+  }
+  for (int i = 0; i < 2; i++) {
+    dumpOutput(model->dump[i], model, step);
   }
 }
 
@@ -157,7 +193,7 @@ double singleCellInteractions(PhaseFieldModel* model, Cell* cell,
   double phi = cellField[i][j];
   double cahnHilliard = model->kappa * centralDiff(model, i, j, cellField) +
     model->alpha * phi * (model->phi0 - phi) * (phi - 0.5 * model->phi0);
-  double advection =  -model->motility *
+  double advection =  -model->motility / model->M * 
     (cell->vx * gradient(model, i, j, 0, cellField) -
      cell->vy * gradient(model, i, j, 1, cellField));
   double fixVolume = 4.0 * model->mu * phi / (model->piR2phi02) *
