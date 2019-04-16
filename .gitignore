@@ -24,6 +24,7 @@
 *.xyz
 
 **/bin/*
+**/figure/*
 
 #TeX stuff
 *.bbl
