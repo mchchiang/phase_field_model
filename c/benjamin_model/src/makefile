@@ -1,5 +1,6 @@
 
-CC := gcc-8 #gcc
+CC := gcc-8
+# CC := gcc
 CFLAGS := -Wall -Wshadow -O3 -std=c11 -fopenmp
 INC := -I../../mtwister/ -I../../arralloc/
 LDFLAGS := -lm -lgomp
