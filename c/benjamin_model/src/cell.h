@@ -12,8 +12,7 @@
 #endif
 
 typedef struct {
-  double** field[2];
-  double** volumeField;
+  double** field[2]; // phase field
   int setIndex;
   int getIndex;
   int lx; // x size of lattice
