@@ -50,6 +50,8 @@ int main (int argc, char* argv[]) {
     nparams += sscanf(line, "seed = %d", &seed);
   }
 
+  fclose(file);
+  
   if (nparams != 20) {
     printf("Not enough parameters specified!\n");
     return 1;
@@ -72,7 +74,7 @@ int main (int argc, char* argv[]) {
     printf("R = %.5f\n", R);
     printf("seed = %d\n", seed);
     printf("cm_file = %s\n", cmFile);
-    printf("shape)file = %s\n", shapeFile);
+    printf("shape_file = %s\n", shapeFile);
   }
 
   printf("Initialising model ...\n");
