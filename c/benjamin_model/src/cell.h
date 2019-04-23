@@ -31,6 +31,7 @@ typedef struct {
   double deltaYCM;
   double volume; // total volume of the cell
   double incell;
+  double* gyration; // gyration tensor of the cell
 } Cell;
 
 Cell* initCell(int x, int y, int lx, int ly, double dr,
@@ -39,6 +40,7 @@ void deleteCell(Cell* cell);
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0);
 void initField(Cell* cell, double** field);
 void updateCM(Cell* cell);
+void updateGyration(Cell* cell);
 void updateVolume(Cell* cell);
 void updateVelocity(Cell* cell, double dt);
 void shiftCoordinates(Cell* cell, int xShift, int yShift);

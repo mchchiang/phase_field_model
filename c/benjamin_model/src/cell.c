@@ -8,16 +8,16 @@
 #include "array.h"
 #include "random.h"
 
-Cell* initCell(int _x, int _y, int _lx, int _ly,
-	       double dr, double _incell, int seed) {
+Cell* initCell(int x, int y, int lx, int ly,
+	       double dr, double incell, int seed) {
   // Allocate memory for a cell
   Cell* cell = malloc(sizeof *cell);
   
-  cell->x = _x;
-  cell->y = _y;
-  cell->lx = _lx;
-  cell->ly = _ly;
-  cell->incell = _incell;
+  cell->x = x;
+  cell->y = y;
+  cell->lx = lx;
+  cell->ly = ly;
+  cell->incell = incell;
 
   // Allocate memory and initialise the field to zero
   for (int i = 0; i < 2; i++) {
@@ -36,6 +36,7 @@ Cell* initCell(int _x, int _y, int _lx, int _ly,
   cell->theta = randDouble(cell->random)*2.0*M_PI;
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
+  cell->gyration = create1DDoubleArray(3);
   return cell;
 }
 
@@ -43,6 +44,7 @@ void deleteCell(Cell* cell) {
   for (int i = 0; i < 2; i++) {
     free(cell->field[i]);
   }
+  free(cell->gyration);
   free(cell);
 }
 
@@ -127,6 +129,33 @@ void updateVelocity(Cell* cell, double dt) {
     (randDouble(cell->random)*2.0-1.0);
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
+}
+
+void updateGyration(Cell* cell) {
+  // Assume centre of mass is updated
+  double gxx = 0.0;
+  double gxy = 0.0;
+  double gyy = 0.0;
+  double dx, dy;
+  int count = 0;
+  for (int i = 0; i < cell->lx; i++) {
+    for (int j = 0; j < cell->ly; j++) {
+      if (cell->field[cell->getIndex][i][j] > cell->incell) {
+	dx = i+0.5-cell->xcm;
+	dy = j+0.5-cell->ycm;
+	gxx += dx*dx;
+	gyy += dy*dy;
+	gxy += dx*dy;
+	count++;
+      }
+    }
+  }
+  gxx /= (double) count;
+  gxy /= (double) count;
+  gyy /= (double) count;
+  cell->gyration[0] = gxx;
+  cell->gyration[1] = gyy;
+  cell->gyration[2] = gxy;
 }
 
 void shiftCoordinates(Cell* cell, int xShift, int yShift) {
