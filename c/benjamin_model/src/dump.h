@@ -3,8 +3,7 @@
 #ifndef DUMP_H
 #define DUMP_H
 
-#define DUMP_DIR_SIZE 500
-#define DUMP_FILE_SIZE 80
+#define DIR_SIZE 500
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -29,9 +29,8 @@ PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
   model->cellLy = 1;
   model->cells = malloc(sizeof *model->cells * ncells);
   model->totalField = create2DDoubleArray(model->lx, model->ly);
-  model->dump[0] = createFieldDump("field.dat", 1000, true);
-  model->dump[1] = createCMDump("cm.dat", 1000, false);
-  model->dump[2] = createCellFieldDump("cellfield.dat", 10, 1000, true);
+  model->dumps = NULL;
+  model->ndumps = 0;
   return model; 
 }
 
@@ -43,8 +42,8 @@ void deleteModel(PhaseFieldModel* model) {
   }
   free(model->cells);
   free(model->totalField);
-  for (int i = 0; i < 3; i++) {
-    deleteDump(model->dump[i]);
+  for (int i = 0; i < model->ndumps; i++) {
+    deleteDump(model->dumps[i]);
   }
   free(model);
 }
@@ -167,8 +166,8 @@ void output(PhaseFieldModel* model, int step) {
   if (step % 1000 == 0) {
     printf("Step %d\n", step);
   }
-  for (int i = 0; i < 3; i++) {
-    dumpOutput(model->dump[i], model, step);
+  for (int i = 0; i < model->ndumps; i++) {
+    dumpOutput(model->dumps[i], model, step);
   }
 }
 

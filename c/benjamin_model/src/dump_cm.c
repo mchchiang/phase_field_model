@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 #include "dump.h"
 #include "phase_field_model.h"
 #include "cell.h"
@@ -15,7 +16,7 @@ typedef struct CMDump {
 } CMDump;
 
 void cmOutput(CMDump* dump, PhaseFieldModel* model, int step) {
-  char tmpfile [DUMP_FILE_SIZE];
+  char tmpfile [DIR_SIZE];
   FILE* f;
   if (dump->override) {
     strcpy(tmpfile, dump->super.filename);
@@ -35,8 +36,8 @@ void cmOutput(CMDump* dump, PhaseFieldModel* model, int step) {
     cy = cell->y;
     x = cx+cell->xcm;
     y = cy+cell->ycm;
-    ix = (int) (x / model->lx);
-    iy = (int) (y / model->ly);
+    ix = (int) floor(x / model->lx);
+    iy = (int) floor(y / model->ly);
     wx = x - ix * model->lx;
     wy = y - iy * model->ly;
     fprintf(f, "%.5f %.5f %d %d\n", wx, wy, ix, iy);

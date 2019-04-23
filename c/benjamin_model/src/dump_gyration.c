@@ -15,7 +15,7 @@ typedef struct GyrationDump {
 } GyrationDump;
 
 void gyrationOutput(GyrationDump* dump, PhaseFieldModel* model, int step) {
-  char tmpfile [DUMP_FILE_SIZE];
+  char tmpfile [DIR_SIZE];
   FILE* f;
   if (dump->override) {
     strcpy(tmpfile, dump->super.filename);

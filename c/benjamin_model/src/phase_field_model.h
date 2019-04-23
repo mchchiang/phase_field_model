@@ -24,7 +24,8 @@ typedef struct PhaseFieldModel {
   int cellLy;
   Cell** cells;
   double** totalField;
-  Dump* dump[3];
+  Dump** dumps;
+  int ndumps;
 } PhaseFieldModel;
 
 PhaseFieldModel* createModel(int lx, int ly,int ncells);
