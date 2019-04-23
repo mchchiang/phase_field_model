@@ -93,17 +93,6 @@ int main (int argc, char* argv[]) {
   model->cellLy = cellLy;
 
   initCellsFromFile(model, cmFile, shapeFile, seed);
-  // Init cell in the middle
-  // initSquareCell(model, 0, 0, 0, (int)R, (int)R);
-  /*  int x = 0, y = 0;
-  for (int i = 0; i < ncells; i++) {
-    initSquareCell(model, i, x, y, (int)R, (int)R);
-    y += (int) (R*1.4);
-    if (y >= L) {
-      y = (int) (x / R + (R*0.5));
-      x += (int) (R*1.2);
-    }
-    }*/
 
   printf("Done initialisation.\n");
   

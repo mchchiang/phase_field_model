@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <omp.h>
 #include "array.h"
@@ -28,9 +29,9 @@ PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
   model->cellLy = 1;
   model->cells = malloc(sizeof *model->cells * ncells);
   model->totalField = create2DDoubleArray(model->lx, model->ly);
-  model->dump[0] = createFieldDump("field.dat", 1000);
-  model->dump[1] = createCMDump("cm.dat", 1000);
-  model->dump[2] = createCellFieldDump("cellfield.dat", 10, 1000);
+  model->dump[0] = createFieldDump("field.dat", 1000, true);
+  model->dump[1] = createCMDump("cm.dat", 1000, false);
+  model->dump[2] = createCellFieldDump("cellfield.dat", 10, 1000, true);
   return model; 
 }
 
@@ -154,6 +155,7 @@ void run(PhaseFieldModel* model, int nsteps) {
       updateVolume(cell);
       updateCellField(model, cell);
       updateCM(cell);
+      updateGyration(cell);
       updateVelocity(cell, model->dt);
     }
     }
