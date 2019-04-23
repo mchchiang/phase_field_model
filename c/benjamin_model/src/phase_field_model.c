@@ -10,7 +10,7 @@
 #include "dump.h"
 
 PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
-  PhaseFieldModel* model = (PhaseFieldModel*) malloc(sizeof(PhaseFieldModel));
+  PhaseFieldModel* model =  malloc(sizeof *model);
   model->lx = _lx;
   model->ly = _ly;
   model->numOfCells = ncells;
@@ -26,10 +26,11 @@ PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
   model->motility = 0.0;
   model->cellLx = 1;
   model->cellLy = 1;
-  model->cells = (Cell**) malloc(sizeof(Cell*)*ncells);
-  model->cellTypeField = create2DDoubleArray(model->lx, model->ly);
+  model->cells = malloc(sizeof *model->cells * ncells);
+  model->totalField = create2DDoubleArray(model->lx, model->ly);
   model->dump[0] = createFieldDump("field.dat", 1000);
   model->dump[1] = createCMDump("cm.dat", 1000);
+  model->dump[2] = createCellFieldDump("cellfield.dat", 10, 1000);
   return model; 
 }
 
@@ -40,8 +41,8 @@ void deleteModel(PhaseFieldModel* model) {
     }
   }
   free(model->cells);
-  free(model->cellTypeField);
-  for (int i = 0; i < 2; i++) {
+  free(model->totalField);
+  for (int i = 0; i < 3; i++) {
     deleteDump(model->dump[i]);
   }
   free(model);
@@ -51,7 +52,7 @@ void initSquareCell(PhaseFieldModel* model, int index, int x, int y,
 		    int dx, int dy) {
   int clx = model->cellLx;
   int cly = model->cellLy;
-  Cell* cell = initCell(x, y, clx, cly, model->phi0/2.0, index);
+  Cell* cell = initCell(x, y, clx, cly, model->Dr, model->phi0/2.0, index);
   model->cells[index] = cell;
   int x0 = (clx-dx)/2;
   int y0 = (cly-dy)/2;
@@ -97,7 +98,7 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
     if (nvar == 3) {
       x = (int)(xcm-clx/2);
       y = (int)(ycm-cly/2);
-      cell = initCell(x, y, clx, cly, model->phi0/2.0, index+seed);
+      cell = initCell(x, y, clx, cly, model->Dr, model->phi0/2.0, index+seed);
       model->cells[index] = cell;
       initField(cell, field);
       count++;
@@ -119,7 +120,7 @@ void run(PhaseFieldModel* model, int nsteps) {
     // Reset fields to zero
     for (int i = 0; i < model->lx; i++) {
       for (int j = 0; j < model->ly; j++) {
-	model->cellTypeField[i][j] = 0.0;
+	model->totalField[i][j] = 0.0;
       }
     }
     
@@ -138,7 +139,7 @@ void run(PhaseFieldModel* model, int nsteps) {
 	  x = iwrap(model, cx+j);
 	  y = jwrap(model, cy+k);
 	  phi = cell->field[get][j][k];
-	  model->cellTypeField[x][y] += phi*phi;
+	  model->totalField[x][y] += phi*phi;
 	}
       }
     }
@@ -153,7 +154,7 @@ void run(PhaseFieldModel* model, int nsteps) {
       updateVolume(cell);
       updateCellField(model, cell);
       updateCM(cell);
-      updateVelocity(cell);
+      updateVelocity(cell, model->dt);
     }
     }
     output(model, n);
@@ -164,52 +165,65 @@ void output(PhaseFieldModel* model, int step) {
   if (step % 1000 == 0) {
     printf("Step %d\n", step);
   }
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     dumpOutput(model->dump[i], model, step);
   }
 }
 
 void updateCellField(PhaseFieldModel* model, Cell* cell) {
   startUpdateCellField(cell);
-  int cx = cell->lx;
-  int cy = cell->ly;
-  // Apply fixed (Dirichlet) boundary conditions (u = 0 at boundaries)
-  // i and j are coordinates in the cell's own reference frame
+  int clx = cell->lx;
+  int cly = cell->ly;
+  int cx = cell->x;
+  int cy = cell->y;
   int set = cell->setIndex;
   int get = cell->getIndex;
-  for (int i = 1; i < cx-1; i++) {
-    for (int j = 1; j < cy-1; j++) {
-      cell->field[set][i][j] = cell->field[get][i][j] + model->dt * model->M *
-	(singleCellInteractions(model, cell, i, j) +
-	 cellCellInteractions(model, cell, i, j));
+
+  double** cellField = cell->field[get];
+  double cahnHilliard, volumeConst, advection, repulsion, phi;
+  int x, y; // Lab frame coordinates of a lattice element
+  int iuu, iu, id, idd, juu, ju, jd, jdd;  // Nearest neighbours
+  double vol = cell->volume;
+  double volprefactor = 4.0 * model->mu / model->piR2phi02;
+
+  // Apply fixed (Dirichlet) boundary conditions (u = 0 at boundaries)
+  // i and j are coordinates in the cell's own reference frame
+  for (int i = 2; i < clx-2; i++) {
+    for (int j = 2; j < cly-2; j++) {
+      phi = cellField[i][j];
+      iu = icellup(model, i);
+      iuu = icellup(model, iu);
+      id = icelldown(model, i);
+      idd = icelldown(model, id);
+      ju = jcellup(model, j);
+      juu = jcellup(model, ju);
+      jd = jcelldown(model, j);
+      jdd = jcelldown(model, jd);
+      
+      // Cahn-Hilliard term
+      cahnHilliard = model->kappa *
+	centralDiff(model, i, j, iu, id, ju, jd, cellField) +
+	model->alpha * phi * (model->phi0 - phi) * (phi - 0.5 * model->phi0);
+
+      // Volume term
+      volumeConst = volprefactor * phi * (1.0 - vol / model->piR2phi02);
+
+      // Advection term (use the 3rd order upwind scheme)
+      advection = model->motility *
+	(upwind(model, i, j, iuu, iu, id, idd, 0, cell->vx, cellField) -
+	 upwind(model, i, j, juu, ju, jd, jdd, 1, cell->vy, cellField));
+
+      // Repulsion term
+      x = iwrap(model, cx+i);
+      y = jwrap(model, cy+j);
+      repulsion = 2.0 * model->epsilon * phi *
+	(phi*phi - model->totalField[x][y]);
+      
+      cell->field[set][i][j] = cell->field[get][i][j] + model->dt *
+	(model->M * (cahnHilliard + volumeConst + repulsion) - advection);
     }
   }
   endUpdateCellField(cell);
-}
-
-double singleCellInteractions(PhaseFieldModel* model, Cell* cell,
-			      int i, int j) {
-  double** cellField = cell->field[cell->getIndex];
-  double phi = cellField[i][j];
-  double cahnHilliard = model->kappa * centralDiff(model, i, j, cellField) +
-    model->alpha * phi * (model->phi0 - phi) * (phi - 0.5 * model->phi0);
-  double advection =  -model->motility / model->M * 
-    (cell->vx * gradient(model, i, j, 0, cellField) -
-     cell->vy * gradient(model, i, j, 1, cellField));
-  double fixVolume = 4.0 * model->mu * phi / (model->piR2phi02) *
-    (1.0 - 1.0/(model->piR2phi02) * cell->volume);
-  return cahnHilliard + fixVolume + advection;
-}
-
-double cellCellInteractions(PhaseFieldModel* model, Cell* cell, int i, int j) {
-  double phi = cell->field[cell->getIndex][i][j];
-  int cx = cell->x;
-  int cy = cell->y;
-  int x = iwrap(model, cx+i);
-  int y = jwrap(model, cy+j);
-
-  // Compute exclusion effect
-  return 2.0 * model->epsilon * phi * (phi*phi - model->cellTypeField[x][y]);
 }
 
 int iwrap(PhaseFieldModel* model, int i) {
@@ -228,32 +242,82 @@ int jwrap(PhaseFieldModel* model, int j) {
   return model->ly + remainder;
 }
 
-int iup(PhaseFieldModel* model, int i) {
+inline int iup(PhaseFieldModel* model, int i) {
   return (i+1 >= model->lx) ? 0 : i+1;
 }
 
-int idown(PhaseFieldModel* model, int i) {
+inline int idown(PhaseFieldModel* model, int i) {
   return (i-1 < 0) ? model->lx-1 : i-1;
 }
 
-int jup(PhaseFieldModel* model, int j) {
+inline int jup(PhaseFieldModel* model, int j) {
   return (j+1 >= model->ly) ? 0 : j+1;
 }
 
-int jdown(PhaseFieldModel* model, int j) {
+inline int jdown(PhaseFieldModel* model, int j) {
   return (j-1 < 0) ? model->ly-1 : j-1;
 }
 
-double centralDiff(PhaseFieldModel* model, int i, int j, double** field) {
-  return field[iup(model,i)][j] + field[idown(model,i)][j] +
-    field[i][jup(model,j)] + field[i][jdown(model,j)] - 4.0 * field[i][j];
+int icellwrap(PhaseFieldModel* model, int i) {
+  int remainder = i % model->cellLx;
+  if (remainder >= 0) {
+    return remainder;
+  }
+  return model->cellLx + remainder;
 }
 
-double gradient(PhaseFieldModel* model, int i, int j,
-		int comp, double** field) {
-  if (comp == 0) {
-    return 0.5*(field[iup(model,i)][j] - field[idown(model,i)][j]);
-  } else {
-    return 0.5*(field[i][jup(model,j)] - field[i][jdown(model,j)]);
+int jcellwrap(PhaseFieldModel* model, int j) {
+  int remainder = j % model->cellLy;
+  if (remainder >= 0) {
+    return remainder;
+  }
+  return model->cellLy + remainder;
+}
+
+inline int icellup(PhaseFieldModel* model, int i) {
+  return (i+1 >= model->cellLx) ? 0 : i+1;
+}
+
+inline int icelldown(PhaseFieldModel* model, int i) {
+  return (i-1 < 0) ? model->cellLx-1 : i-1;
+}
+
+inline int jcellup(PhaseFieldModel* model, int j) {
+  return (j+1 >= model->cellLy) ? 0 : j+1;
+}
+
+inline int jcelldown(PhaseFieldModel* model, int j) {
+  return (j-1 < 0) ? model->cellLy-1 : j-1;
+}
+
+inline double centralDiff(PhaseFieldModel* model, int i, int j, int iu, int id,
+		   int ju, int jd, double** field) {
+  return field[iu][j] + field[id][j] + field[i][ju] + field[i][jd] -
+    4.0 * field[i][j];
+}
+
+inline double gradient(PhaseFieldModel* model, int i, int j, int u, int d,
+		       int comp, double** field) {
+  switch (comp) {
+  case 0: return 0.5*(field[u][j] - field[d][j]);
+  case 1: return 0.5*(field[i][u] - field[i][d]);
+  default: return 0.0;
+  }
+}
+
+inline double upwind(PhaseFieldModel* model, int i, int j, int uu, int u,
+		     int d, int dd, int comp, double v, double** field) {
+  switch (comp) {
+  case 0: return v > 0.0 ?
+      v * (2.0 * field[u][j] + 3.0 * field[i][j] -
+	   6.0 * field[d][j] + field[dd][j]) / 6.0 :
+    v * (-field[uu][j] + 6.0 * field[u][j] -
+	 3.0 * field[i][j] - 2.0 * field[d][j]) / 6.0;
+  case 1: return v > 0.0 ?
+      v * (2.0 * field[i][u] + 3.0 * field[i][j] -
+	   6.0 * field[i][d] + field[i][dd]) / 6.0 :
+    v * (-field[i][uu] + 6.0 * field[i][u] -
+	 3.0 * field[i][j] - 2.0 * field[i][d]) / 6.0;
+  default: return 0.0;
   }
 }

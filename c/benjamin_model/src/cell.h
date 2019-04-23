@@ -3,7 +3,7 @@
 #ifndef CELL_H
 #define CELL_H
 
-#include "mtwister.h"
+#include "random.h"
 
 #define CMSHIFT 2.0
 
@@ -24,7 +24,7 @@ typedef struct {
   double vy; // y velocity of the cell
   double theta;
   double rotateDiff;
-  MTRand random; 
+  Random* random; 
   double xcm; // x centre of mass in cell's frame
   double ycm; // y centre of mass in cell's frame
   double deltaXCM;
@@ -33,14 +33,14 @@ typedef struct {
   double incell;
 } Cell;
 
-Cell* initCell(int x, int y, int lx, int ly,
+Cell* initCell(int x, int y, int lx, int ly, double dr,
 	       double incell, int seed);
 void deleteCell(Cell* cell);
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0);
 void initField(Cell* cell, double** field);
 void updateCM(Cell* cell);
 void updateVolume(Cell* cell);
-void updateVelocity(Cell* cell);
+void updateVelocity(Cell* cell, double dt);
 void shiftCoordinates(Cell* cell, int xShift, int yShift);
 void calculateCM(Cell* cell, double* xcm, double* ycm);
 void startUpdateCellField(Cell* cell);

@@ -23,8 +23,8 @@ typedef struct PhaseFieldModel {
   int cellLx;
   int cellLy;
   Cell** cells;
-  double** cellTypeField;
-  Dump* dump[2];
+  double** totalField;
+  Dump* dump[3];
 } PhaseFieldModel;
 
 PhaseFieldModel* createModel(int lx, int ly,int ncells);
@@ -42,18 +42,23 @@ void output(PhaseFieldModel* model, int step);
 void updateCellField(PhaseFieldModel* model, Cell* cell);
 void updateCellVolume(PhaseFieldModel* model);
 
-double singleCellInteractions(PhaseFieldModel* model, Cell* cell,
-			      int i, int j);
-double cellCellInteractions(PhaseFieldModel* model, Cell* cell, int i, int j);
-
 int iwrap(PhaseFieldModel* model, int i);
 int jwrap(PhaseFieldModel* model, int j);
 int iup(PhaseFieldModel* model, int i);
 int idown(PhaseFieldModel* model, int i);
 int jup(PhaseFieldModel* model, int j);
 int jdown(PhaseFieldModel* model, int j);
-double centralDiff(PhaseFieldModel* model, int i, int j, double** field);
-double gradient(PhaseFieldModel* model, int i, int j,
+int icellwrap(PhaseFieldModel* model, int i);
+int jcellwrap(PhaseFieldModel* model, int j);
+int icellup(PhaseFieldModel* model, int i);
+int icelldown(PhaseFieldModel* model, int i);
+int jcellup(PhaseFieldModel* model, int j);
+int jcelldown(PhaseFieldModel* model, int j);
+double centralDiff(PhaseFieldModel* model, int i, int j, int iu, int id,
+		   int ju, int jd, double** field);
+double gradient(PhaseFieldModel* model, int i, int j, int u, int d,
 		int comp, double** field);
+double upwind(PhaseFieldModel* model, int i, int j, int uu, int u,
+	      int d, int dd, int comp, double v, double** field);
 
 #endif

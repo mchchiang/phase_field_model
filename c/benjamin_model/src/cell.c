@@ -6,11 +6,12 @@
 #include <time.h>
 #include "cell.h"
 #include "array.h"
-#include "mtwister.h"
+#include "random.h"
 
-Cell* initCell(int _x, int _y, int _lx, int _ly, double _incell, int seed) {
+Cell* initCell(int _x, int _y, int _lx, int _ly,
+	       double dr, double _incell, int seed) {
   // Allocate memory for a cell
-  Cell* cell = (Cell*) malloc(sizeof(Cell));
+  Cell* cell = malloc(sizeof *cell);
   
   cell->x = _x;
   cell->y = _y;
@@ -24,17 +25,15 @@ Cell* initCell(int _x, int _y, int _lx, int _ly, double _incell, int seed) {
   }
   cell->setIndex = 1;
   cell->getIndex = 1;
-  cell->rotateDiff = 0.01;
+  cell->rotateDiff = dr;
   cell->xcm = cell->lx/2.0;
   cell->ycm = cell->ly/2.0;
   cell->deltaXCM = 0.0;
   cell->deltaYCM = 0.0;
   cell->volume = 0.0;
-  srand(seed);
-  cell->random = seedRand(rand());
-
+  cell->random = createRandom(seed);
   // pick a random 2D direction
-  cell->theta = genRand(&cell->random)*2.0*M_PI;
+  cell->theta = randDouble(cell->random)*2.0*M_PI;
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
   return cell;
@@ -76,8 +75,8 @@ void calculateCM(Cell* cell, double* xcm, double* ycm) {
   for (int i = 0; i < cell->lx; i++) {
     for (int j = 0; j < cell->ly; j++) {
       if (cell->field[cell->getIndex][i][j] > cell->incell) {
-	xavg += i;
-	yavg += j;
+	xavg += i+0.5; // Use the centre of a lattice element
+	yavg += j+0.5;
 	count++;
       }
     }
@@ -123,9 +122,9 @@ void updateVolume(Cell* cell) {
   cell->volume = totalVolume;
 }
 
-void updateVelocity(Cell* cell) {
-  cell->theta += sqrt(2.0 * cell->rotateDiff) *
-    (genRand(&cell->random)*2.0-1.0);
+void updateVelocity(Cell* cell, double dt) {
+  cell->theta += sqrt(6.0 * cell->rotateDiff * dt) *
+    (randDouble(cell->random)*2.0-1.0);
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
 }

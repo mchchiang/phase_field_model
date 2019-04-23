@@ -1,7 +1,7 @@
 
 CC := gcc-8
 # CC := gcc
-CFLAGS := -Wall -Wshadow -O3 -std=c11 -fopenmp
+CFLAGS := -Wall -Wshadow -Winline -O3 -std=c11 -fopenmp
 INC := -I../../mtwister/ -I../../arralloc/
 LDFLAGS := -lm -lgomp
 
@@ -12,7 +12,7 @@ PRG_SUFFIX =
 ODIR := ../bin/obj/
 EDIR := ../bin/exe/
 
-SRC := cell.c phase_field_model.c array.c dump.c
+SRC := cell.c phase_field_model.c array.c dump.c random_mtwister.c
 OBJ := $(patsubst %.c, $(ODIR)/%.o, $(SRC))
 PRG_SRC := run_phase_field_model.c
 PRG_OBJ := $(patsubst %.c, $(ODIR)/%.o, $(PRG_SRC))

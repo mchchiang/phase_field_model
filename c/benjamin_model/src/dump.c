@@ -44,7 +44,7 @@ void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
   FILE* f = fopen(tmpfile, "w");
   for (int i = 0; i < model->lx; i++) {
     for (int j = 0; j < model->ly; j++) {
-      fprintf(f, "%d %d %.5f\n", i, j, sqrt(model->cellTypeField[i][j]));
+      fprintf(f, "%d %d %.5f\n", i, j, sqrt(model->totalField[i][j]));
     }
     fprintf(f, "\n");
   }  
