@@ -41,7 +41,9 @@ void gyrationOutput(GyrationDump* dump, PhaseFieldModel* model, int step) {
   }
 }
 
-void deleteGyrationDump(GyrationDump* dump) {}
+void deleteGyrationDump(GyrationDump* dump) {
+  free(dump);
+}
 
 DumpFuncs gyrationDumpFuncs =
   {

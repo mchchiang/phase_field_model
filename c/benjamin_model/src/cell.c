@@ -44,6 +44,7 @@ void deleteCell(Cell* cell) {
   for (int i = 0; i < 2; i++) {
     free(cell->field[i]);
   }
+  deleteRandom(cell->random);
   free(cell->gyration);
   free(cell);
 }

@@ -10,7 +10,7 @@
 
 int main (int argc, char* argv[]) {
   
-  if (argc < 2 || argc > 3) {
+  if (argc != 2) {
     printf("Usage: RunPhaseFieldModel param_file [dump_file]\n");
     return 1;
   }
@@ -26,10 +26,18 @@ int main (int argc, char* argv[]) {
     return 1;
   }
 
-  char line [80], cmFile[DIR_SIZE], shapeFile[DIR_SIZE];
+  char line [80], dumpMode [80];
+  char cmFile [DIR_SIZE], shapeFile [DIR_SIZE], dumpFile [DIR_SIZE];
   double phi0, M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
   int cellLx, cellLy, lx, ly, nequil, nsteps, ncells, seed;
   int nparams = 0;
+  int ndumps = 0;
+  int nedumps = 0;
+  int maxDumps = 50;
+  int printInc, override, cellIndex;
+  Dump** equilDumps = malloc(sizeof *equilDumps * maxDumps);
+  Dump** dumps = malloc(sizeof *dumps * maxDumps);
+
   while (fgets(line, sizeof(line), file) != NULL) {
     nparams += sscanf(line, "alpha = %lf", &alpha);
     nparams += sscanf(line, "phi0 = %lf", &phi0);
@@ -51,7 +59,54 @@ int main (int argc, char* argv[]) {
     nparams += sscanf(line, "cm_file = %s", cmFile);
     nparams += sscanf(line, "shape_file = %s", shapeFile);
     nparams += sscanf(line, "seed = %d", &seed);
+    
+    // Read dumps
+    if (sscanf(line, "dump_cm %d %d %s %s", 
+	       &printInc, &override, dumpMode, dumpFile) == 4) {
+      if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	equilDumps[nedumps] = createCMDump(dumpFile, printInc, override);
+	nedumps++;
+      } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	dumps[ndumps] = createCMDump(dumpFile, printInc, override);
+	ndumps++; 
+      }
+    }
+    if (sscanf(line, "dump_gyr %d %d %s %s",
+	       &printInc, &override, dumpMode, dumpFile) == 4) {
+      if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	equilDumps[nedumps] = 
+	  createGyrationDump(dumpFile, printInc, override);
+	nedumps++;
+      } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	dumps[ndumps] = createGyrationDump(dumpFile, printInc, override);
+	ndumps++;
+      }
+    }
+    if (sscanf(line, "dump_field %d %d %s %s",
+	       &printInc, &override, dumpMode, dumpFile) == 4) {
+      if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	equilDumps[nedumps] = createFieldDump(dumpFile, printInc, override);
+	nedumps++;
+      } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	dumps[ndumps] = createFieldDump(dumpFile, printInc, override);
+	ndumps++;
+      }
+    }
+    if (sscanf(line, "dump_cell_field %d %d %d %s %s",
+	       &cellIndex, &printInc, &override, dumpMode, dumpFile) == 5) {
+      if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	equilDumps[nedumps] =
+	  createCellFieldDump(dumpFile, cellIndex, printInc, override);
+	nedumps++;
+      } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	dumps[ndumps] =
+	  createCellFieldDump(dumpFile, cellIndex, printInc, override);
+	ndumps++;
+      }
+    }
   }
+  equilDumps = realloc(equilDumps, sizeof *equilDumps * nedumps);
+  dumps = realloc(dumps, sizeof *dumps * ndumps);
 
   fclose(file);
   
@@ -79,55 +134,6 @@ int main (int argc, char* argv[]) {
   printf("cm_file = %s\n", cmFile);
   printf("shape_file = %s\n", shapeFile);  
 
-  // Read dump files
-  int maxDumps = 50;
-  int ndumps = 0;
-  Dump** dumps = malloc(sizeof *dumps * maxDumps);
-  if (argc == 3) {
-    printf("Reading dump list file ...\n");
-    filename = argv[++argi];
-    file = fopen(filename, "r");
-    if (file == NULL) {
-      printf("Error in opening dump file!");
-    }
-
-    char dumpfile [DIR_SIZE];
-    int printInc, override, cellIndex;
-    int count = 0;
-    while (fgets(line, sizeof(line), file) != NULL) {
-      if (sscanf(line, "cm %d %d %s", &printInc, &override, dumpfile) == 3) {
-	if (count+1 < maxDumps) {
-	  dumps[count] = createCMDump(dumpfile, printInc, override);
-	  count++;	
-	}
-      }
-      if (sscanf(line, "gyr %d %d %s",
-		 &printInc, &override, dumpfile) == 3) {
-	if (count+1 < maxDumps) {
-	  dumps[count] = createGyrationDump(dumpfile, printInc, override);
-	  count++;
-	}
-      }
-      if (sscanf(line, "field %d %d %s",
-		 &printInc, &override, dumpfile) == 3) {
-	if (count+1 < maxDumps) {
-	  dumps[count] = createFieldDump(dumpfile, printInc, override);
-	  count++;
-	}
-      }
-      if (sscanf(line, "cell_field %d %d %d %s",
-		 &cellIndex, &printInc, &override, dumpfile) == 4) {
-	if (count+1 < maxDumps) {
-	  dumps[count] =
-	    createCellFieldDump(dumpfile, cellIndex, printInc, override);
-	  count++;
-	}
-      }
-    }
-    ndumps = count;
-  }
-  dumps = realloc(dumps, sizeof *dumps * ndumps);
-    
   printf("Initialising model ...\n");
   
   PhaseFieldModel* model = createModel(lx, ly, ncells);
@@ -142,20 +148,34 @@ int main (int argc, char* argv[]) {
   model->motility = 0.0;
   model->cellLx = cellLx;
   model->cellLy = cellLy;
-
-  model->ndumps = ndumps;
-  model->dumps = dumps;
+  model->ndumps = nedumps;
+  model->dumps = equilDumps;
   
   initCellsFromFile(model, cmFile, shapeFile, seed);
-
+  
   printf("Done initialisation.\n");
   
   model->dt = dt;
+
+  printf("Doing equilibration run ...\n");
   run(model, nequil);
 
-  model->mu = mu;
   model->motility = v;
+  model->ndumps = ndumps;
+  model->dumps = dumps;
+
+  printf("Doing main simulation run ...\n");
   run(model, nsteps);
 
   deleteModel(model);
+
+  for (int i = 0; i < nedumps; i++) {
+    deleteDump(equilDumps[i]);
+  }
+  free(equilDumps);
+
+  for (int i = 0; i < ndumps; i++) {
+    deleteDump(dumps[i]);
+  }
+  free(dumps);
 }

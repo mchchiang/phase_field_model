@@ -6,18 +6,17 @@
 #include "random.h"
 #include "mtwister.h"
 
-Random* createRandom(long _seed) {
+Random* createRandom(long seed) {
   Random* random = malloc(sizeof *random);
-  random->seed = _seed;
-  srand(_seed);
-  MTRand* mtrand = malloc(sizeof *mtrand);
-  *mtrand = seedRand(rand());
-  random->randomObject = mtrand;
+  random->seed = seed;
+  srand(seed);
+  random->randomObject = malloc(sizeof(MTRand));
+  *((MTRand*) random->randomObject) = seedRand(rand());
   return random;
 }
 
 void deleteRandom(Random* random) {
-  free(random->randomObject);
+  free((MTRand*)random->randomObject);
   free(random);
 }
 

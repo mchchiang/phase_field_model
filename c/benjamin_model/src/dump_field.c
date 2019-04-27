@@ -22,7 +22,7 @@ void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
     strcat(tmpfile, ".tmp");
   } else {
     strcpy(tmpfile, dump->super.filename);
-    char* suffix;
+    char suffix [80];
     sprintf(suffix, ".%d", step);
     strcat(tmpfile, suffix);
   }
@@ -39,7 +39,9 @@ void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
   }
 }
 
-void deleteFieldDump(FieldDump* dump) {}
+void deleteFieldDump(FieldDump* dump) {
+  free(dump);
+}
 
 DumpFuncs fieldDumpFuncs =
   {

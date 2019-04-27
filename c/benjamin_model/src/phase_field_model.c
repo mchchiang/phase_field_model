@@ -42,9 +42,6 @@ void deleteModel(PhaseFieldModel* model) {
   }
   free(model->cells);
   free(model->totalField);
-  for (int i = 0; i < model->ndumps; i++) {
-    deleteDump(model->dumps[i]);
-  }
   free(model);
 }
 
@@ -114,7 +111,7 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
 }
 
 void run(PhaseFieldModel* model, int nsteps) {
-  printf("Running model ...\n");
+  output(model, 0); // Output initial state of the model
   for (int n = 1; n <= nsteps; n++) {
     // Update each cell type field
     // Reset fields to zero

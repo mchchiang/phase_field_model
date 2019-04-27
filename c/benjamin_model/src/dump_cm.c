@@ -48,7 +48,9 @@ void cmOutput(CMDump* dump, PhaseFieldModel* model, int step) {
   }
 }
 
-void deleteCMDump(CMDump* dump) {}
+void deleteCMDump(CMDump* dump) {
+  free(dump);
+}
 
 DumpFuncs cmDumpFuncs =
   {

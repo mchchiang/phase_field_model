@@ -8,17 +8,15 @@
 void setDump(Dump* dump, void* derived, char* filename, int printInc,
 	     DumpFuncs* funcs) {
   dump->derived = derived;
-  char* filenamecpy = malloc(sizeof *filenamecpy * DIR_SIZE);
-  strcpy(filenamecpy, filename);
-  dump->filename = filenamecpy;
+  dump->filename = malloc(sizeof *dump->filename * DIR_SIZE);
+  strcpy(dump->filename, filename);
   dump->printInc = printInc;
   dump->funcs = funcs;
 }
 
 void deleteDump(Dump* dump) {
-  dump->funcs->delete(dump);
   free(dump->filename);
-  free(dump);
+  dump->funcs->delete(dump);
 }
 
 void dumpOutput(Dump* dump, PhaseFieldModel* model, int step) {
