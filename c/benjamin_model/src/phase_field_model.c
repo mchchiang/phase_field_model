@@ -21,7 +21,7 @@ PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
   model->kappa = 0.0;
   model->alpha = 0.0;
   model->mu = 0.0;
-  model->Dr = 1.0;
+  model->Dr = 0.0;
   model->M = 1.0;
   model->epsilon = 0.0;
   model->motility = 0.0;
@@ -49,7 +49,7 @@ void initSquareCell(PhaseFieldModel* model, int index, int x, int y,
 		    int dx, int dy) {
   int clx = model->cellLx;
   int cly = model->cellLy;
-  Cell* cell = initCell(x, y, clx, cly, model->Dr, model->phi0/2.0, index);
+  Cell* cell = createCell(x, y, clx, cly, model->Dr, model->phi0/2.0, index);
   model->cells[index] = cell;
   int x0 = (clx-dx)/2;
   int y0 = (cly-dy)/2;
@@ -95,7 +95,8 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
     if (nvar == 3) {
       x = (int)(xcm-clx/2);
       y = (int)(ycm-cly/2);
-      cell = initCell(x, y, clx, cly, model->Dr, model->phi0/2.0, index+seed);
+      cell = createCell(x, y, clx, cly, model->Dr, 
+			model->phi0/2.0, index+seed);
       model->cells[index] = cell;
       initField(cell, field);
       count++;
@@ -113,8 +114,7 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
 void run(PhaseFieldModel* model, int nsteps) {
   output(model, 0); // Output initial state of the model
   for (int n = 1; n <= nsteps; n++) {
-    // Update each cell type field
-    // Reset fields to zero
+    // Update total field
     for (int i = 0; i < model->lx; i++) {
       for (int j = 0; j < model->ly; j++) {
 	model->totalField[i][j] = 0.0;
@@ -208,7 +208,7 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
 
       // Advection term (use the 3rd order upwind scheme)
       advection = model->motility *
-	(upwind(model, i, j, iuu, iu, id, idd, 0, cell->vx, cellField) -
+	(upwind(model, i, j, iuu, iu, id, idd, 0, cell->vx, cellField) +
 	 upwind(model, i, j, juu, ju, jd, jdd, 1, cell->vy, cellField));
 
       // Repulsion term

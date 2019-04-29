@@ -34,7 +34,7 @@ typedef struct {
   double* gyration; // gyration tensor of the cell
 } Cell;
 
-Cell* initCell(int x, int y, int lx, int ly, double dr,
+Cell* createCell(int x, int y, int lx, int ly, double dr,
 	       double incell, long seed);
 void deleteCell(Cell* cell);
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0);

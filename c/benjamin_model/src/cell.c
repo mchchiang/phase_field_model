@@ -8,7 +8,7 @@
 #include "array.h"
 #include "random.h"
 
-Cell* initCell(int x, int y, int lx, int ly,
+Cell* createCell(int x, int y, int lx, int ly,
 	       double dr, double incell, long seed) {
   // Allocate memory for a cell
   Cell* cell = malloc(sizeof *cell);
@@ -75,9 +75,10 @@ void calculateCM(Cell* cell, double* xcm, double* ycm) {
   double xavg = 0.0;
   double yavg = 0.0;
   int count = 0;
+  int get = cell->getIndex;
   for (int i = 0; i < cell->lx; i++) {
     for (int j = 0; j < cell->ly; j++) {
-      if (cell->field[cell->getIndex][i][j] > cell->incell) {
+      if (cell->field[get][i][j] > cell->incell) {
 	xavg += i+0.5; // Use the centre of a lattice element
 	yavg += j+0.5;
 	count++;
