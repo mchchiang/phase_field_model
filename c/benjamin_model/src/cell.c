@@ -9,7 +9,7 @@
 #include "random.h"
 
 Cell* initCell(int x, int y, int lx, int ly,
-	       double dr, double incell, int seed) {
+	       double dr, double incell, long seed) {
   // Allocate memory for a cell
   Cell* cell = malloc(sizeof *cell);
   
