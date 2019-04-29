@@ -23,9 +23,9 @@ function get_rand(){
 }
 
 # Set the model parameters
-ncells=36
-ncell_x=6
-ncell_y=6
+ncells=100
+ncell_x=10
+ncell_y=10
 confine_radius=8.0
 init_radius=7.0
 ideal_radius=12.0
@@ -42,7 +42,7 @@ nequil=10000 # 10000
 delta_t=0.5 # 0.5
 dump_cm_freq=1000 # 1000
 dump_gyr_freq=1000 # 1000
-dump_field_freq=10000 # 10000
+dump_field_freq=100000 # 10000
 equildump_cm_freq=1000 # 1000
 equildump_gyr_freq=10000 # 10000
 equildump_field_freq=10000 # 10000
@@ -74,9 +74,9 @@ fi
 cm_file="cm_${sim_name}.in"
 shape_file="shape_${sim_name}.in"
 params_file="params_${sim_name}.txt"
-equildump_cm_file="pos-equil_${sim_name}.dat"
+#equildump_cm_file="pos-equil_${sim_name}.dat"
 #equildump_gyr_file="gyr-equil_${sim_name}.dat"
-equildump_field_file="field-equil_${sim_name}.dat"
+#equildump_field_file="field-equil_${sim_name}.dat"
 dump_cm_file="pos_${sim_name}.dat"
 dump_gyr_file="gyr_${sim_name}.dat"
 dump_field_file="field_${sim_name}.dat"
