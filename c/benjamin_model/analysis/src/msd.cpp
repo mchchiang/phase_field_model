@@ -6,14 +6,12 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <map>
 #include "position.hpp"
 
 using std::cout;
 using std::endl;
 using std::ofstream;
 using std::vector;
-using std::map;
 using std::string;
 
 int main (int argc, char* argv[]) {
@@ -41,18 +39,21 @@ int main (int argc, char* argv[]) {
     return 1;
   }
 
-  map<long, double> r2avg;
-  map<long, double> r4avg;
+  int nbins {static_cast<int>((endTime-startTime)/timeInc)+1};
+  vector<double> r2avg (nbins, 0.0);
+  vector<double> r4avg (nbins, 0.0);
+
   vector<double> vec (2, 0.0);
   vector<vector<double> > dr (npoints, vec);
   vector<vector<double> > rold (npoints, vec);
   
   // Do point average for now and don't do time average
-  long time, dataTime;
+  int ibin;
+  long time;
   double x, y, dx, dy, r2, r4; 
   while (reader.nextFrame()) {
     time = reader.getTime();
-    dataTime = time-startTime;
+    ibin = static_cast<int>((time-startTime) / timeInc);
     if (time < startTime) {
       continue;
     } else if (time == startTime) {
@@ -60,10 +61,7 @@ int main (int argc, char* argv[]) {
 	rold[i][0] = reader.getUnwrappedPosition(i, 0);
 	rold[i][1] = reader.getUnwrappedPosition(i, 1);
       } 
-      r2avg[dataTime] = 0.0;
-      r4avg[dataTime] = 0.0;
     } else if (time > startTime && time <= endTime) {
-      r2avg[dataTime] = 0.0;
       for (int i {}; i < npoints; i++) {
 	x = reader.getUnwrappedPosition(i, 0);
 	y = reader.getUnwrappedPosition(i, 1);
@@ -73,13 +71,13 @@ int main (int argc, char* argv[]) {
 	dr[i][1] += dy;
 	r2 = (dr[i][0]*dr[i][0]+dr[i][1]*dr[i][1]);
 	r4 = r2*r2;
-	r2avg[dataTime] += r2;
-	r4avg[dataTime] += r4;
+	r2avg[ibin] += r2;
+	r4avg[ibin] += r4;
 	rold[i][0] = x;
 	rold[i][1] = y;
       }
-      r2avg[dataTime] /= static_cast<double>(npoints);
-      r4avg[dataTime] /= static_cast<double>(npoints);
+      r2avg[ibin] /= static_cast<double>(npoints);
+      r4avg[ibin] /= static_cast<double>(npoints);
     } else {
       break;
     }
@@ -95,10 +93,8 @@ int main (int argc, char* argv[]) {
   }
   writer << std::fixed << std::setprecision(5);
 
-  for (map<long,double>::iterator it {r2avg.begin()}; 
-       it != r2avg.end(); it++) {
-    writer << it->first << " " << it->second << " " 
-	   << r4avg[it->first] << endl;
+  for (int i {}; i < nbins; i++) {
+    writer << (i*timeInc) << " " << r2avg[i] << " " << r4avg[i] << endl;
   }
   writer.close();
 }

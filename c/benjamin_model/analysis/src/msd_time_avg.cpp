@@ -6,14 +6,15 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <map>
+#include <omp.h>
+#include <cstdio>
+#include <cstdlib>
 #include "position.hpp"
 
 using std::cout;
 using std::endl;
 using std::ofstream;
 using std::vector;
-using std::map;
 using std::string;
 
 int main (int argc, char* argv[]) {
@@ -40,68 +41,77 @@ int main (int argc, char* argv[]) {
     cout << "Problem with opening position file!" << endl;
     return 1;
   }
+
+  // Read the position data
+  int nbins {static_cast<int>((endTime-startTime)/timeInc)+1};
+  vector<double> vec (2, 0.0);
+  vector<vector<double> > vec2 (nbins, vec);
+  vector<vector<vector<double> > >* pos 
+  {new vector<vector<vector<double > > >(npoints, vec2)};
+  long time;
+  int ibin;
+  cout << "Reading data ..." << endl;
+  while (reader.nextFrame()) {
+    time = reader.getTime();
+    if (time < startTime) {
+      continue;
+    } else if (time >= startTime && time <= endTime) {
+      ibin = static_cast<int>((time-startTime)/timeInc);
+      for (int i {}; i < npoints; i++) {
+	(*pos)[i][ibin][0] = reader.getUnwrappedPosition(i, 0);
+	(*pos)[i][ibin][1] = reader.getUnwrappedPosition(i, 1);
+      }
+    } else {
+      break;
+    }
+  }
+  cout << "Done reading data" << endl;
   reader.close();
 
-  map<long, long long> count;
-  map<long, double> r2avg;
-  map<long, double> r4avg;
-  vector<double> vec (2, 0.0);
-  vector<vector<double> > dr (npoints, vec);
-  vector<vector<double> > rold (npoints, vec);
+  int i, j;
+  double dx, dy, r2, r4; 
+  vector<long> count;
+  vector<long> totCount (nbins, 0);
+  vector<double> r2avg, r4avg;
+  vector<double> totR2Avg (nbins, 0.0);
+  vector<double> totR4Avg (nbins, 0.0);
 
-  long time, dataTime;
-  double x, y, dx, dy, r2, r4; 
+#pragma omp parallel default(none) shared(nbins, npoints, vec, vec2, pos, totR2Avg, totR4Avg, totCount, reader, lx, ly, startTime, endTime, timeInc, posFile, outFile, argi) private(time, ibin, i, j, dx, dy, r2, r4, r2avg, r4avg, count) 
+{
+    // Initialise array
+    r2avg = vector<double>(nbins, 0.0);
+    r4avg = vector<double>(nbins, 0.0);
+    count = vector<long>(nbins, 0);
 
-  // Initial point is by definition zero
-  r2avg[0] = 0.0;
-  r4avg[0] = 0.0; 
-
-  for (long t {startTime}; t < endTime; t += timeInc) {
-    cout << "Doing t = " << t << endl;
-    reader.open(posFile, npoints, lx, ly, timeInc);
-    for (long i {startTime}; i < t; i += timeInc) {
-      if (!reader.skipFrame()) break;
-    }
-    while (reader.nextFrame()) {
-      time = reader.getTime();
-      dataTime = time-t;
-      if (time < t) {
-	continue;
-      } else if (time == t) {
-	for (int i {}; i < npoints; i++) {
-	  rold[i][0] = reader.getUnwrappedPosition(i, 0);
-	  rold[i][1] = reader.getUnwrappedPosition(i, 1);
-	  dr[i][0] = 0.0;
-	  dr[i][1] = 0.0;
-	} 
-      } else if (time > t && time <= endTime) {
-	for (int i {}; i < npoints; i++) {
-	  x = reader.getUnwrappedPosition(i, 0);
-	  y = reader.getUnwrappedPosition(i, 1);
-	  dx = x - rold[i][0];
-	  dy = y - rold[i][1];
-	  dr[i][0] += dx;
-	  dr[i][1] += dy;
-	  r2 = (dr[i][0]*dr[i][0]+dr[i][1]*dr[i][1]);
+#pragma omp for schedule(dynamic,10)
+    for (int k = 0; k < nbins-1; k++) {
+      for (j = k+1; j < nbins; j++) {
+	ibin = j-k;
+	for (i = 0; i < npoints; i++) {
+	  dx = (*pos)[i][j][0] - (*pos)[i][k][0];
+	  dy = (*pos)[i][j][1] - (*pos)[i][k][1];
+	  r2 = dx*dx + dy*dy;
 	  r4 = r2*r2;
-	  r2avg[dataTime] += r2;
-	  r4avg[dataTime] += r4;
-	  count[dataTime]++;
-	  rold[i][0] = x;
-	  rold[i][1] = y;
+	  r2avg[ibin] += r2;
+	  r4avg[ibin] += r4;
 	}
-      } else {
-	break;
-      }
+	count[ibin] += npoints;
+      }     
     }
-    reader.close();
-  }
 
+    for (i = 0; i < nbins; i++) {
+#pragma omp atomic
+      totR2Avg[i] += r2avg[i];
+#pragma omp atomic
+      totR4Avg[i] += r4avg[i];
+#pragma omp atomic
+      totCount[i] += count[i];
+    }
+}
   // Normalise results
-  for (map<long,double>::iterator it {r2avg.begin()}; 
-       it != r2avg.end(); it++) {
-    r2avg[it->first] /= static_cast<double>(count[it->first]);
-    r4avg[it->first] /= static_cast<double>(count[it->first]);
+  for (i = 1; i < nbins; i++) { // first 
+    totR2Avg[i] /= static_cast<double>(totCount[i]);
+    totR4Avg[i] /= static_cast<double>(totCount[i]);
   }
 
   // Output results
@@ -113,10 +123,10 @@ int main (int argc, char* argv[]) {
   }
   writer << std::fixed << std::setprecision(5);
 
-  for (map<long,double>::iterator it {r2avg.begin()}; 
-       it != r2avg.end(); it++) {
-    writer << it->first << " " << it->second << " " 
-	   << r4avg[it->first] << endl;
+  for (i = 0; i < nbins; i++) {
+    writer << (i*timeInc) << " " << totR2Avg[i] << " " << totR4Avg[i] << endl;
   }
   writer.close();
+
+  delete pos;
 }

@@ -1,8 +1,8 @@
 
 CXX := g++
-CXXFLAGS := -O3 -Wall -Wshadow -std=c++11
+CXXFLAGS := -O3 -Wall -Wshadow -std=c++11 -fopenmp
 INC = ./lib/
-LDFLAGS := -larmadillo
+LDFLAGS := -larmadillo -lgomp
 
 PRG_SUFFIX_FLAG := 0
 
