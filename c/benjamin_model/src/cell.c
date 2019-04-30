@@ -164,8 +164,8 @@ void shiftCoordinates(Cell* cell, int xShift, int yShift) {
   startUpdateCellField(cell);
   int set = cell->setIndex;
   int get = cell->getIndex;
-  int xStart, xEnd, yStart, yEnd;
-  int zeroXStart, zeroXEnd, zeroYStart, zeroYEnd;
+  int xStart, xEnd, yStart, yEnd; // these are in the old frame
+  int zeroXStart, zeroXEnd, zeroYStart, zeroYEnd; // these are in the new frame
   if (xShift >= 0) {
     xStart = xShift;
     xEnd = cell->lx;
@@ -195,9 +195,12 @@ void shiftCoordinates(Cell* cell, int xShift, int yShift) {
       cell->field[set][i][j] = 0.0;
     }
   }
-  for (int i = zeroXEnd; i < cell->lx; i++) {
-    for (int j = zeroYStart; j < zeroYEnd; j++) {
-      cell->field[set][i][j] = 0.0;
+
+  if (zeroYStart < zeroYEnd) {
+    for (int i = 0; i < cell->lx; i++) {
+      for (int j = zeroYStart; j < zeroYEnd; j++) {
+	cell->field[set][i][j] = 0.0;
+      }
     }
   }
 
