@@ -124,28 +124,32 @@ void run(PhaseFieldModel* model, int nsteps) {
     Cell* cell;
     double phi; 
     int clx, cly, x, y, cx, cy, get;
-    for (int i = 0; i < model->numOfCells; i++) {
+    int i, j, k;
+#pragma omp parallel default(none) shared(model) \
+private(i, j, k, clx, cly, x, y, cx, cy, get, phi, cell) 
+{
+#pragma omp for schedule(static)
+    for (i = 0; i < model->numOfCells; i++) {
       cell = model->cells[i];
       clx = cell->lx;
       cly = cell->ly;
       cx = cell->x;
       cy = cell->y;
       get = cell->getIndex;
-      for (int j = 0; j < clx; j++) {
-	for (int k = 0; k < cly; k++) {
+      for (j = 0; j < clx; j++) {
+	for (k = 0; k < cly; k++) {
 	  x = iwrap(model, cx+j);
 	  y = jwrap(model, cy+k);
 	  phi = cell->field[get][j][k];
+#pragma omp atomic
 	  model->totalField[x][y] += phi*phi;
 	}
       }
     }
-    
-    // Update each cell field
-    int i;
-#pragma omp parallel default(none) shared(model) private(i, cell) 
-    {
-#pragma omp for schedule(dynamic, 4)
+    // Implicit sync barrier after for loop
+
+    // Update each cell field    
+#pragma omp for schedule(static)
     for (i = 0; i < model->numOfCells; i++) {
       cell = model->cells[i];
       updateVolume(cell);
