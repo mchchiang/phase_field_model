@@ -74,6 +74,31 @@ void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0) {
 void calculateCM(Cell* cell, double* xcm, double* ycm) {
   double xavg = 0.0;
   double yavg = 0.0;
+  double mass = 0.0;
+  double phi;
+  int get = cell->getIndex;
+  for (int i = 0; i < cell->lx; i++) {
+    for (int j = 0; j < cell->ly; j++) {
+      phi = cell->field[get][i][j];
+      xavg += (phi * (i+0.5)); // Use the centre of a lattice element
+      yavg += (phi * (j+0.5));
+      mass += phi;
+    }
+  }
+  if (mass > 0.0) {
+    xavg /= mass;
+    yavg /= mass;
+  } else {
+    xavg = 0.0;
+    yavg = 0.0;
+  }
+  *xcm = xavg;
+  *ycm = yavg;
+}
+
+/*void calculateCM(Cell* cell, double* xcm, double* ycm) {
+  double xavg = 0.0;
+  double yavg = 0.0;
   int count = 0;
   int get = cell->getIndex;
   for (int i = 0; i < cell->lx; i++) {
@@ -94,7 +119,7 @@ void calculateCM(Cell* cell, double* xcm, double* ycm) {
   }
   *xcm = xavg;
   *ycm = yavg;
-}
+  }*/
 
 void updateCM(Cell* cell) {
   double oldXCM = cell->xcm;
@@ -117,9 +142,10 @@ void updateCM(Cell* cell) {
 void updateVolume(Cell* cell) {
   double totalVolume = 0.0;
   int get = cell->getIndex;
+  double phi;
   for (int i = 0; i < cell->lx; i++) {
     for (int j = 0; j < cell->ly; j++) {
-      double phi = cell->field[get][i][j];
+      phi = cell->field[get][i][j];
       totalVolume += phi*phi;
     }
   }

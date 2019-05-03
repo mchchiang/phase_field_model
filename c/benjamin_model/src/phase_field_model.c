@@ -10,10 +10,10 @@
 #include "phase_field_model.h"
 #include "dump.h"
 
-PhaseFieldModel* createModel(int _lx, int _ly, int ncells) {
+PhaseFieldModel* createModel(int lx, int ly, int ncells) {
   PhaseFieldModel* model =  malloc(sizeof *model);
-  model->lx = _lx;
-  model->ly = _ly;
+  model->lx = lx;
+  model->ly = ly;
   model->numOfCells = ncells;
   model->dt = 0.01;
   model->phi0 = 1.0;
@@ -185,7 +185,7 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
   double cahnHilliard, volumeConst, advection, repulsion, phi;
   int x, y; // Lab frame coordinates of a lattice element
   int iuu, iu, id, idd, juu, ju, jd, jdd;  // Nearest neighbours
-  double vol = cell->volume;
+  double vol = cell->volume / model->piR2phi02;
   double volprefactor = 4.0 * model->mu / model->piR2phi02;
 
   // Apply fixed (Dirichlet) boundary conditions (u = 0 at boundaries)
@@ -208,7 +208,7 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
 	model->alpha * phi * (model->phi0 - phi) * (phi - 0.5 * model->phi0);
 
       // Volume term
-      volumeConst = volprefactor * phi * (1.0 - vol / model->piR2phi02);
+      volumeConst = volprefactor * phi * (1.0 - vol);
 
       // Advection term (use the 3rd order upwind scheme)
       advection = model->motility *
