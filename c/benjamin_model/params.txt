@@ -1,8 +1,8 @@
 phi0 = 2.0
 M = 0.1
 R = 12.0
-kappa = 0.05
-alpha = 0.025
+kappa = 0.2
+alpha = 0.1
 mu = 6000.0
 Dr = 0.0001
 epsilon = 0.1
@@ -11,10 +11,14 @@ cellLy = 41
 lx = 96
 ly = 83
 ncells = 36
-nsteps = 100000
+nsteps = 1000000
 nequil = 10000
 dt = 0.5
-v = 0.0036
-seed = 63572
+v = 0.012
+seed = 7572
 cm_file = init_N_36.dat
 shape_file = shape_L_41_circle_R_7.dat
+dump_cm 1000 1 equil cm.dat
+dump_field 1000 1 equil field.dat
+dump_cm 1000 1 main cm.dat
+dump_field 1000 1 main field.dat
