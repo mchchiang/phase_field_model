@@ -32,6 +32,8 @@ typedef struct {
   double volume; // total volume of the cell
   double incell;
   double* gyration; // gyration tensor of the cell
+  double* lcos[2];
+  double* lsin[2]; 
 } Cell;
 
 Cell* createCell(int x, int y, int lx, int ly, double dr,

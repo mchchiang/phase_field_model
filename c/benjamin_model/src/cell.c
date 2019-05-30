@@ -32,11 +32,29 @@ Cell* createCell(int x, int y, int lx, int ly,
   cell->deltaYCM = 0.0;
   cell->volume = 0.0;
   cell->random = createRandom(seed);
-  // pick a random 2D direction
+  // Pick a random 2D direction
   cell->theta = randDouble(cell->random)*2.0*M_PI;
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
   cell->gyration = create1DDoubleArray(3);
+
+  // Store periodic values
+  cell->lcos[0] = create1DDoubleArray(cell->lx);
+  cell->lcos[1] = create1DDoubleArray(cell->ly);
+  cell->lsin[0] = create1DDoubleArray(cell->lx);
+  cell->lsin[1] = create1DDoubleArray(cell->ly);
+  double angle;
+  for (int i = 0; i < cell->lx; i++) {
+    angle = i*2.0*M_PI/ (double) cell->lx;
+    cell->lcos[0][i] = cos(angle);
+    cell->lsin[0][i] = sin(angle);
+  }
+  for (int j = 0; j < cell->ly; j++) {
+    angle = j*2.0*M_PI/ (double) cell->ly;
+    cell->lcos[1][j] = cos(angle);
+    cell->lsin[1][j] = sin(angle);
+  }
+    
   return cell;
 }
 
@@ -46,6 +64,10 @@ void deleteCell(Cell* cell) {
   }
   deleteRandom(cell->random);
   free(cell->gyration);
+  for (int i = 0; i < 2; i++) {
+    free(cell->lcos[i]);
+    free(cell->lsin[i]);
+  }
   free(cell);
 }
 
@@ -71,7 +93,7 @@ void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0) {
   updateVolume(cell);
 }
 
-void calculateCM(Cell* cell, double* xcm, double* ycm) {
+/*void calculateCM(Cell* cell, double* xcm, double* ycm) {
   double xavg = 0.0;
   double yavg = 0.0;
   double mass = 0.0;
@@ -94,32 +116,37 @@ void calculateCM(Cell* cell, double* xcm, double* ycm) {
   }
   *xcm = xavg;
   *ycm = yavg;
-}
+  }*/
 
-/*void calculateCM(Cell* cell, double* xcm, double* ycm) {
-  double xavg = 0.0;
-  double yavg = 0.0;
-  int count = 0;
+void calculateCM(Cell* cell, double* xcm, double* ycm) {
+  double xcos = 0.0;
+  double xsin = 0.0;
+  double ycos = 0.0;
+  double ysin = 0.0;
+  double mass = 0.0;
+  double phi;
+  double twopi = 2.0*M_PI;
   int get = cell->getIndex;
   for (int i = 0; i < cell->lx; i++) {
     for (int j = 0; j < cell->ly; j++) {
-      if (cell->field[get][i][j] > cell->incell) {
-	xavg += i+0.5; // Use the centre of a lattice element
-	yavg += j+0.5;
-	count++;
-      }
+      phi = cell->field[get][i][j];
+      mass += phi;
+      xcos += cell->lcos[0][i]*phi;
+      xsin += cell->lsin[0][i]*phi;
+      ycos += cell->lcos[1][j]*phi;
+      ysin += cell->lsin[1][j]*phi;
     }
   }
-  if (count > 0) {
-    xavg /= (double) count;
-    yavg /= (double) count;
-  } else {
-    xavg = 0.0;
-    yavg = 0.0;
-  }
-  *xcm = xavg;
-  *ycm = yavg;
-  }*/
+  xcos /= mass;
+  xsin /= mass;
+  ycos /= mass;
+  ysin /= mass;
+  double xang, yang;
+  xang = atan2(-xsin,-xcos)+M_PI;
+  yang = atan2(-ysin,-ycos)+M_PI;
+  *xcm = cell->lx*xang/twopi;
+  *ycm = cell->ly*yang/twopi;
+}
 
 void updateCM(Cell* cell) {
   double oldXCM = cell->xcm;
