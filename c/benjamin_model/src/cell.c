@@ -104,8 +104,8 @@ void updateCM(Cell* cell) {
   cell->deltaYCM += (cell->ycm - oldYCM);
 
   if (fabs(cell->deltaXCM) > CMSHIFT || fabs(cell->deltaYCM) > CMSHIFT) {
-    int xShift = (int)(floor(cell->deltaXCM));
-    int yShift = (int)(floor(cell->deltaYCM));
+    int xShift = (int)(round(cell->deltaXCM));
+    int yShift = (int)(round(cell->deltaYCM));
     shiftCoordinates(cell, xShift, yShift);
     cell->deltaXCM -= xShift;
     cell->deltaYCM -= yShift;
