@@ -12,12 +12,12 @@
 
 typedef struct FieldDump {
   Dump super; // Base struct must be the first element
-  bool override;
+  bool overwrite;
 } FieldDump;
 
 void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
   char tmpfile [DIR_SIZE];
-  if (dump->override) {
+  if (dump->overwrite) {
     strcpy(tmpfile, dump->super.filename);
     strcat(tmpfile, ".tmp");
   } else {
@@ -34,7 +34,7 @@ void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
     fprintf(f, "\n");
   }  
   fclose(f);
-  if (dump->override) {
+  if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }
 }
@@ -49,9 +49,9 @@ DumpFuncs fieldDumpFuncs =
    .delete = (void (*)(Dump*)) &deleteFieldDump
   };
 
-Dump* createFieldDump(char* filename, int printInc, bool override) {
+Dump* createFieldDump(char* filename, int printInc, bool overwrite) {
   FieldDump* dump = malloc(sizeof *dump);
   setDump(&dump->super, dump, filename, printInc, &fieldDumpFuncs);
-  dump->override = override;
+  dump->overwrite = overwrite;
   return (Dump*) dump;
 }

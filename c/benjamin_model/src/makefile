@@ -12,7 +12,7 @@ PRG_SUFFIX =
 ODIR := ../bin/obj/
 EDIR := ../bin/exe/
 
-SRC := cell.c phase_field_model.c array.c dump.c dump_cm.c dump_field.c dump_cell_field.c dump_gyration.c random_mtwister.c
+SRC := cell.c phase_field_model.c array.c dump.c dump_cm.c dump_bulk_cm.c dump_field.c dump_cell_field.c dump_gyration.c random_mtwister.c
 OBJ := $(patsubst %.c, $(ODIR)/%.o, $(SRC))
 PRG_SRC := run_phase_field_model.c
 PRG_OBJ := $(patsubst %.c, $(ODIR)/%.o, $(PRG_SRC))

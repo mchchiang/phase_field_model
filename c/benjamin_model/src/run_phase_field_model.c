@@ -34,7 +34,7 @@ int main (int argc, char* argv[]) {
   int ndumps = 0;
   int nedumps = 0;
   int maxDumps = 50;
-  int printInc, override, cellIndex;
+  int printInc, overwrite, cellIndex;
   Dump** equilDumps = malloc(sizeof *equilDumps * maxDumps);
   Dump** dumps = malloc(sizeof *dumps * maxDumps);
 
@@ -62,45 +62,55 @@ int main (int argc, char* argv[]) {
     
     // Read dumps
     if (sscanf(line, "dump_cm %d %d %s %s", 
-	       &printInc, &override, dumpMode, dumpFile) == 4) {
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
-	equilDumps[nedumps] = createCMDump(dumpFile, printInc, override);
+	equilDumps[nedumps] = createCMDump(dumpFile, printInc, overwrite);
 	nedumps++;
       } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
-	dumps[ndumps] = createCMDump(dumpFile, printInc, override);
+	dumps[ndumps] = createCMDump(dumpFile, printInc, overwrite);
+	ndumps++; 
+      }
+    }
+    if (sscanf(line, "dump_bulk_cm %d %s %s",
+	       &printInc, dumpMode, dumpFile) == 3) {
+      if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	equilDumps[nedumps] = createBulkCMDump(dumpFile, printInc);
+	nedumps++;
+      } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	dumps[ndumps] = createBulkCMDump(dumpFile, printInc);
 	ndumps++; 
       }
     }
     if (sscanf(line, "dump_gyr %d %d %s %s",
-	       &printInc, &override, dumpMode, dumpFile) == 4) {
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
 	equilDumps[nedumps] = 
-	  createGyrationDump(dumpFile, printInc, override);
+	  createGyrationDump(dumpFile, printInc, overwrite);
 	nedumps++;
       } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
-	dumps[ndumps] = createGyrationDump(dumpFile, printInc, override);
+	dumps[ndumps] = createGyrationDump(dumpFile, printInc, overwrite);
 	ndumps++;
       }
     }
     if (sscanf(line, "dump_field %d %d %s %s",
-	       &printInc, &override, dumpMode, dumpFile) == 4) {
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
-	equilDumps[nedumps] = createFieldDump(dumpFile, printInc, override);
+	equilDumps[nedumps] = createFieldDump(dumpFile, printInc, overwrite);
 	nedumps++;
       } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
-	dumps[ndumps] = createFieldDump(dumpFile, printInc, override);
+	dumps[ndumps] = createFieldDump(dumpFile, printInc, overwrite);
 	ndumps++;
       }
     }
     if (sscanf(line, "dump_cell_field %d %d %d %s %s",
-	       &cellIndex, &printInc, &override, dumpMode, dumpFile) == 5) {
+	       &cellIndex, &printInc, &overwrite, dumpMode, dumpFile) == 5) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
 	equilDumps[nedumps] =
-	  createCellFieldDump(dumpFile, cellIndex, printInc, override);
+	  createCellFieldDump(dumpFile, cellIndex, printInc, overwrite);
 	nedumps++;
       } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
 	dumps[ndumps] =
-	  createCellFieldDump(dumpFile, cellIndex, printInc, override);
+	  createCellFieldDump(dumpFile, cellIndex, printInc, overwrite);
 	ndumps++;
       }
     }

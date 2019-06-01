@@ -11,13 +11,13 @@
 
 typedef struct GyrationDump {
   Dump super; // Base struct must be the first element
-  bool override;
+  bool overwrite;
 } GyrationDump;
 
 void gyrationOutput(GyrationDump* dump, PhaseFieldModel* model, int step) {
   char tmpfile [DIR_SIZE];
   FILE* f;
-  if (dump->override) {
+  if (dump->overwrite) {
     strcpy(tmpfile, dump->super.filename);
     strcat(tmpfile, ".tmp");
     f = fopen(tmpfile, "w");
@@ -36,7 +36,7 @@ void gyrationOutput(GyrationDump* dump, PhaseFieldModel* model, int step) {
     fprintf(f, "%.5f %.5f %.5f\n", gxx, gyy, gxy);
   }
   fclose(f);
-  if (dump->override) {
+  if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }
 }
@@ -51,9 +51,9 @@ DumpFuncs gyrationDumpFuncs =
    .delete = (void (*)(Dump*)) &deleteGyrationDump
   };
 
-Dump* createGyrationDump(char* filename, int printInc, bool override) {
+Dump* createGyrationDump(char* filename, int printInc, bool overwrite) {
   GyrationDump* dump = malloc(sizeof *dump);
   setDump(&dump->super, dump, filename, printInc, &gyrationDumpFuncs);
-  dump->override = override;
+  dump->overwrite = overwrite;
   return (Dump*) dump;
 }

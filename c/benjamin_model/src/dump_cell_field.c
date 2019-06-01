@@ -12,12 +12,12 @@
 typedef struct CellFieldDump {
   Dump super;
   int cellIndex;
-  bool override;
+  bool overwrite;
 } CellFieldDump;
 
 void cellFieldOutput(CellFieldDump* dump, PhaseFieldModel* model, int step) {
   char tmpfile [DIR_SIZE];
-  if (dump->override) {
+  if (dump->overwrite) {
     strcpy(tmpfile, dump->super.filename);
     strcat(tmpfile, ".tmp");
   } else {
@@ -36,7 +36,7 @@ void cellFieldOutput(CellFieldDump* dump, PhaseFieldModel* model, int step) {
     fprintf(f, "\n");
   }  
   fclose(f);
-  if (dump->override) {
+  if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }
 }
@@ -52,10 +52,10 @@ DumpFuncs cellFieldDumpFuncs =
   };
 
 Dump* createCellFieldDump(char* filename, int cellIndex,
-			  int printInc, bool override) {
+			  int printInc, bool overwrite) {
   CellFieldDump* dump = malloc(sizeof *dump);
   setDump(&dump->super, dump, filename, printInc, &cellFieldDumpFuncs);
   dump->cellIndex = cellIndex;
-  dump->override = override;
+  dump->overwrite = overwrite;
   return (Dump*) dump;
 }

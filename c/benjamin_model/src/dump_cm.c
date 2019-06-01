@@ -12,13 +12,13 @@
 
 typedef struct CMDump {
   Dump super; // Base struct must be the first element
-  bool override;
+  bool overwrite;
 } CMDump;
 
 void cmOutput(CMDump* dump, PhaseFieldModel* model, int step) {
   char tmpfile [DIR_SIZE];
   FILE* f;
-  if (dump->override) {
+  if (dump->overwrite) {
     strcpy(tmpfile, dump->super.filename);
     strcat(tmpfile, ".tmp");
     f = fopen(tmpfile, "w");
@@ -43,7 +43,7 @@ void cmOutput(CMDump* dump, PhaseFieldModel* model, int step) {
     fprintf(f, "%.5f %.5f %d %d\n", wx, wy, ix, iy);
   }
   fclose(f);
-  if (dump->override) {
+  if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }
 }
@@ -58,9 +58,9 @@ DumpFuncs cmDumpFuncs =
    .delete = (void (*)(Dump*)) &deleteCMDump
   };
 
-Dump* createCMDump(char* filename, int printInc, bool override) {
+Dump* createCMDump(char* filename, int printInc, bool overwrite) {
   CMDump* dump = malloc(sizeof *dump);
   setDump(&dump->super, dump, filename, printInc, &cmDumpFuncs);
-  dump->override = override;
+  dump->overwrite = overwrite;
   return (Dump*) dump;
 }

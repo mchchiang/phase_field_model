@@ -30,9 +30,10 @@ void setDump(Dump* dump, void* derived, char* filename, int printInc,
 	     DumpFuncs* funcs);
 
 Dump* createCellFieldDump(char* filename, int cellIndex,
-			  int printInc, bool override);
-Dump* createFieldDump(char* filename, int printInc, bool override);
-Dump* createCMDump(char* filename, int printInc, bool override);
-Dump* createGyrationDump(char* filename, int printInc, bool override);
+			  int printInc, bool overwrite);
+Dump* createFieldDump(char* filename, int printInc, bool overwrite);
+Dump* createCMDump(char* filename, int printInc, bool overwrite);
+Dump* createBulkCMDump(char* filenmae, int printInc);
+Dump* createGyrationDump(char* filename, int printInc, bool overwrite);
 
 #endif

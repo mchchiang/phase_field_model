@@ -96,31 +96,6 @@ void calculateCM(Cell* cell, double* xcm, double* ycm) {
   *ycm = yavg;
 }
 
-/*void calculateCM(Cell* cell, double* xcm, double* ycm) {
-  double xavg = 0.0;
-  double yavg = 0.0;
-  int count = 0;
-  int get = cell->getIndex;
-  for (int i = 0; i < cell->lx; i++) {
-    for (int j = 0; j < cell->ly; j++) {
-      if (cell->field[get][i][j] > cell->incell) {
-	xavg += i+0.5; // Use the centre of a lattice element
-	yavg += j+0.5;
-	count++;
-      }
-    }
-  }
-  if (count > 0) {
-    xavg /= (double) count;
-    yavg /= (double) count;
-  } else {
-    xavg = 0.0;
-    yavg = 0.0;
-  }
-  *xcm = xavg;
-  *ycm = yavg;
-  }*/
-
 void updateCM(Cell* cell) {
   double oldXCM = cell->xcm;
   double oldYCM = cell->ycm;

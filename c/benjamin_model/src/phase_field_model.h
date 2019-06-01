@@ -22,6 +22,10 @@ typedef struct PhaseFieldModel {
   double motility;
   int cellLx;
   int cellLy;
+  double* cellXCM;
+  double* cellYCM;
+  int* cellXBoundCount;
+  int* cellYBoundCount;
   Cell** cells;
   double** totalField;
   Dump** dumps;
@@ -41,7 +45,8 @@ void run(PhaseFieldModel* model, int nsteps);
 void output(PhaseFieldModel* model, int step);
 
 void updateCellField(PhaseFieldModel* model, Cell* cell);
-void updateCellVolume(PhaseFieldModel* model);
+void updateCellVolume(PhaseFieldModel* model, Cell* cell);
+void updateCellCM(PhaseFieldModel* model, Cell* cell, int cellIndex);
 
 int iwrap(PhaseFieldModel* model, int i);
 int jwrap(PhaseFieldModel* model, int j);

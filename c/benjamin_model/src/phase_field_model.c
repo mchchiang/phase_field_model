@@ -29,6 +29,10 @@ PhaseFieldModel* createModel(int lx, int ly, int ncells) {
   model->cellLy = 1;
   model->cells = malloc(sizeof *model->cells * ncells);
   model->totalField = create2DDoubleArray(model->lx, model->ly);
+  model->cellXCM = create1DDoubleArray(ncells);
+  model->cellYCM = create1DDoubleArray(ncells);
+  model->cellXBoundCount = create1DIntArray(ncells);
+  model->cellYBoundCount = create1DIntArray(ncells);
   model->dumps = NULL;
   model->ndumps = 0;
   return model; 
@@ -42,6 +46,10 @@ void deleteModel(PhaseFieldModel* model) {
   }
   free(model->cells);
   free(model->totalField);
+  free(model->cellXCM);
+  free(model->cellYCM);
+  free(model->cellXBoundCount);
+  free(model->cellYBoundCount);
   free(model);
 }
 
@@ -152,9 +160,9 @@ private(i, j, k, clx, cly, x, y, cx, cy, get, phi, cell)
 #pragma omp for schedule(static)
     for (i = 0; i < model->numOfCells; i++) {
       cell = model->cells[i];
-      updateVolume(cell);
+      updateCellVolume(model, cell);
       updateCellField(model, cell);
-      updateCM(cell);
+      updateCellCM(model, cell, i);
       updateGyration(cell);
       updateVelocity(cell, model->dt);
     }
@@ -226,6 +234,26 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
     }
   }
   endUpdateCellField(cell);
+}
+
+inline void updateCellVolume(PhaseFieldModel* model, Cell* cell) {
+  updateVolume(cell);
+}
+
+void updateCellCM(PhaseFieldModel* model, Cell* cell, int cellIndex) {
+  updateCM(cell);
+  int ix, iy;
+  double x, y, cx, cy;
+  cx = cell->x;
+  cy = cell->y;
+  x = cx+cell->xcm;
+  y = cy+cell->ycm;
+  ix = (int) floor(x / model->lx);
+  iy = (int) floor(y / model->ly);
+  model->cellXCM[cellIndex] = x - ix * model->lx;
+  model->cellYCM[cellIndex] = y - iy * model->ly;
+  model->cellXBoundCount[cellIndex] = ix;
+  model->cellYBoundCount[cellIndex] = iy;
 }
 
 int iwrap(PhaseFieldModel* model, int i) {
