@@ -65,7 +65,7 @@ void initSquareCell(PhaseFieldModel* model, int index, int x, int y,
 }
 
 void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
-		       char* shapeFile, int seed) {
+		       char* shapeFile, unsigned long seed) {
   FILE* fcm = fopen(cmFile, "r");
   if (fcm == NULL) {
     printf("Problem with opening the centre of mass file!\n");

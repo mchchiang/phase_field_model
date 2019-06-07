@@ -8,7 +8,7 @@ typedef struct Random {
   void* randomObject;
 } Random;
 
-Random* createRandom(long seed); // Set up a random generator
+Random* createRandom(unsigned long seed); // Set up a random generator
 void deleteRandom(Random* rand); // Delete the random generator
 double randDouble(Random* rand); // Return a random float in [0,1)
 int randInt(Random*, int min, int max);// Return a random int in [min, max)

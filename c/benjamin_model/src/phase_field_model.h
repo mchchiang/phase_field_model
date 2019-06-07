@@ -39,7 +39,7 @@ void initSquareCell(PhaseFieldModel* model, int index,
 		    int x, int y, int dx, int dy);
 
 void initCellsFromFile(PhaseFieldModel* model, char* cmFile, char* shapeFile,
-		       int seed);
+		       unsigned long seed);
 
 void run(PhaseFieldModel* model, int nsteps);
 void output(PhaseFieldModel* model, int step);

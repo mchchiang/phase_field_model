@@ -9,6 +9,7 @@
 #include "dump.h"
 #include "phase_field_model.h"
 #include "cell.h"
+#include "array.h"
 
 typedef struct FieldDump {
   Dump super; // Base struct must be the first element
@@ -27,13 +28,35 @@ void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
     strcat(tmpfile, suffix);
   }
   FILE* f = fopen(tmpfile, "w");
+  // Sum over all the phase fields to find the total field
+  Cell* cell;
+  int get, clx, cly, cx, cy, x, y;
+  double phi;
+  double** field = create2DDoubleArray(model->lx, model->ly);
+  for (int i = 0; i < model->numOfCells; i++) {
+    cell = model->cells[i];
+    clx = cell->lx;
+    cly = cell->ly;
+    cx = cell->x;
+    cy = cell->y;
+    get = cell->getIndex;
+    for (int j = 0; j < clx; j++) {
+      for (int k = 0; k < cly; k++) {
+	x = iwrap(model, cx+j);
+	y = jwrap(model, cy+k);
+	phi = cell->field[get][j][k];
+	field[x][y] += phi;
+      }
+    }
+  }
   for (int i = 0; i < model->lx; i++) {
     for (int j = 0; j < model->ly; j++) {
-      fprintf(f, "%d %d %.5f\n", i, j, sqrt(model->totalField[i][j]));
+      fprintf(f, "%d %d %.5f\n", i, j, field[i][j]);
     }
     fprintf(f, "\n");
-  }  
+  }
   fclose(f);
+  free(field);
   if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }

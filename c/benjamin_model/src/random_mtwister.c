@@ -6,7 +6,7 @@
 #include "random.h"
 #include "mtwister.h"
 
-Random* createRandom(long seed) {
+Random* createRandom(unsigned long seed) {
   Random* random = malloc(sizeof *random);
   random->seed = seed;
   srand(seed);

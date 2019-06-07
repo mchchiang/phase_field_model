@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 #include "dump.h"
 #include "phase_field_model.h"
 
@@ -29,7 +30,8 @@ int main (int argc, char* argv[]) {
   char line [80], dumpMode [80];
   char cmFile [DIR_SIZE], shapeFile [DIR_SIZE], dumpFile [DIR_SIZE];
   double phi0, M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
-  int cellLx, cellLy, lx, ly, nequil, nsteps, ncells, seed;
+  int cellLx, cellLy, lx, ly, nequil, nsteps, ncells;
+  unsigned long seed;
   int nparams = 0;
   int ndumps = 0;
   int nedumps = 0;
@@ -58,7 +60,7 @@ int main (int argc, char* argv[]) {
     nparams += sscanf(line, "v = %lf", &v);
     nparams += sscanf(line, "cm_file = %s", cmFile);
     nparams += sscanf(line, "shape_file = %s", shapeFile);
-    nparams += sscanf(line, "seed = %d", &seed);
+    nparams += sscanf(line, "seed = %ld", &seed);
     
     // Read dumps
     if (sscanf(line, "dump_cm %d %d %s %s", 
@@ -140,7 +142,7 @@ int main (int argc, char* argv[]) {
   printf("v = %.5f\n", v);
   printf("M = %.5f\n", M);
   printf("R = %.5f\n", R);
-  printf("seed = %d\n", seed);
+  printf("seed = %ld\n", seed);
   printf("cm_file = %s\n", cmFile);
   printf("shape_file = %s\n", shapeFile);  
 
@@ -167,16 +169,26 @@ int main (int argc, char* argv[]) {
   
   model->dt = dt;
 
+  double start, end, duration;
   printf("Doing equilibration run ...\n");
+  start = omp_get_wtime();
   run(model, nequil);
+  end = omp_get_wtime();
+  duration = end-start;
+  printf("Time taken (sec): %.5f\n", duration);
+  printf("\n");
 
   model->motility = v;
   model->ndumps = ndumps;
   model->dumps = dumps;
 
   printf("Doing main simulation run ...\n");
+  start = omp_get_wtime();
   run(model, nsteps);
-
+  end = omp_get_wtime();
+  duration = end-start;
+  printf("Time taken (sec): %.5f\n", duration);
+  
   deleteModel(model);
 
   for (int i = 0; i < nedumps; i++) {
