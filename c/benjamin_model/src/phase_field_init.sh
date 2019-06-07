@@ -18,9 +18,15 @@ peclet=$(python -c "print '{:.3f}'.format($peclet)")
 # A function for generating random numbers
 max_seed=1000000
 function get_rand(){
-    rand=$(python -c "import random, sys; print random.randint(0,$max_seed)")
+    # Generate a 4-byte random integer using urandom
+    rand=$(od -vAn -N4 -tu4 < /dev/urandom)
     echo $rand
 }
+
+#function get_rand(){
+#    rand=$(python -c "import random, sys; print random.randint(0,$max_seed)")
+#    echo $rand
+#}
 
 # Set the model parameters
 ncells=100
@@ -41,8 +47,9 @@ nsteps=20000000 # 20000000
 nequil=10000 # 10000
 delta_t=0.5 # 0.5
 dump_cm_freq=1000 # 1000
+dump_bulk_cm_freq=1000 # 1000
 dump_gyr_freq=1000 # 1000
-dump_field_freq=100000 # 10000
+dump_field_freq=100000 # 100000
 equildump_cm_freq=1000 # 1000
 equildump_gyr_freq=10000 # 10000
 equildump_field_freq=10000 # 10000
@@ -80,6 +87,7 @@ params_file="params_${sim_name}.txt"
 dump_cm_file="pos_${sim_name}.dat"
 dump_gyr_file="gyr_${sim_name}.dat"
 dump_field_file="field_${sim_name}.dat"
+dump_bulk_cm_file="pos-bulk_${sim_name}.dat"
 
 # Copy the template file
 params_file=${run_dir}/$params_file
@@ -125,3 +133,4 @@ add_dump "dump_field $equildump_field_freq 0 equil" $equildump_field_file
 add_dump "dump_cm $dump_cm_freq 0 main" $dump_cm_file
 add_dump "dump_gyr $dump_gyr_freq 0 main" $dump_gyr_file
 add_dump "dump_field $dump_field_freq 0 main" $dump_field_file
+add_dump "dump_bulk_cm $dump_bulk_cm_freq main" $dump_bulk_cm_file
