@@ -1,5 +1,5 @@
-// msd.cpp
-// A code that computes the mean square displacement from the trajectory file
+// self_int_scatter.cpp
+// A code that computes the self-intermediate scattering function
 
 #include <iostream>
 #include <iomanip>
@@ -9,6 +9,7 @@
 #include <omp.h>
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include "position.hpp"
 
 using std::cout;
@@ -20,8 +21,8 @@ using std::string;
 
 int main (int argc, char* argv[]) {
   
-  if (argc != 11) {
-    cout << "usage: msd npoints lx ly startTime endTime "
+  if (argc != 13) {
+    cout << "usage: self_int_scatter npoints lx ly nqvec r0 startTime endTime "
 	 << "timeInc endShiftTime posFile posBulkFile outFile" << endl;
     return 1;
   }
@@ -30,6 +31,8 @@ int main (int argc, char* argv[]) {
   int npoints {stoi(string(argv[++argi]), nullptr, 10)};
   int lx {stoi(string(argv[++argi]), nullptr, 10)};
   int ly {stoi(string(argv[++argi]), nullptr, 10)};
+  int nqvec {stoi(string(argv[++argi]), nullptr, 10)};
+  double r0 {stod(string(argv[++argi]), nullptr)};
   long startTime {stoi(string(argv[++argi]), nullptr, 10)};
   long endTime {stoi(string(argv[++argi]), nullptr, 10)};
   long timeInc {stoi(string(argv[++argi]), nullptr, 10)};
@@ -37,6 +40,8 @@ int main (int argc, char* argv[]) {
   string posFile {argv[++argi]};
   string posBulkFile {argv[++argi]};
   string outFile {argv[++argi]};
+
+  double qmag {M_PI/r0};
   
   PositionReader reader;
   reader.open(posFile, npoints, lx, ly, timeInc);
@@ -81,65 +86,83 @@ int main (int argc, char* argv[]) {
   }
   long t;
   double xcm, ycm;
-  for (int i = 0; i < nbins; i++) {
+  for (int i {}; i < nbins; i++) {
     cmReader >> t >> xcm >> ycm;
     totCM[i][0] = xcm;
     totCM[i][1] = ycm;
   }
 
-  int i, j, k;
+  // Store a set of orientations for k to average over
+  vector<vector<double> > qvec (nqvec, vec);
+  double theta;
+  for (int i {}; i < nqvec; i++) {
+    theta = i*(2.0*M_PI/nqvec);
+    qvec[i][0] = qmag*cos(theta);
+    qvec[i][1] = qmag*sin(theta);
+  }
+
+  // Compute the self intermediate scattering function
+  int i, j, n, m;
+  vector<long> count;
+  vector<long> totCount (nbins, 0L);
+  vector<double> cosAvg, sinAvg;
+  vector<double> totCosAvg (nbins, 0.0);
+  vector<double> totSinAvg (nbins, 0.0);
+  double dxcm, dycm, qdr;
+  vector<vector<double> > dr;
+  
   int endShiftBin {static_cast<int>((endShiftTime-startTime)/timeInc)+1};
   if (endShiftBin >= nbins) endShiftBin = nbins-1;
-  double dx, dy, r2, r4; 
-  vector<long> count;
-  vector<long> totCount (nbins, 0);
-  vector<double> r2avg, r4avg;
-  vector<double> totR2Avg (nbins, 0.0);
-  vector<double> totR4Avg (nbins, 0.0);
-  double dxcm;
-  double dycm;
-
+  
 #pragma omp parallel default(none) \
-  shared(nbins, npoints, pos, totCM, totR2Avg, totR4Avg, totCount, endShiftBin) \
-  private(time, ibin, i, j, k, dx, dy, r2, r4, r2avg, r4avg, count, dxcm, dycm)
+  shared(nbins, npoints, pos, totCM, vec, nqvec, qvec, totCosAvg, totSinAvg) \
+  shared(totCount, endShiftBin) \
+  private(time, ibin, i, j, n, m, qdr, dxcm, dycm, dr, count, cosAvg, sinAvg)
 {
-    // Initialise array
-    r2avg = vector<double>(nbins, 0.0);
-    r4avg = vector<double>(nbins, 0.0);
-    count = vector<long>(nbins, 0);
 
-#pragma omp for schedule(dynamic,10)
-    for (k = 0; k < endShiftBin; k++) {
-      for (j = k+1; j < nbins; j++) {
-	ibin = j-k;
-	dxcm = totCM[j][0]-totCM[k][0];
-	dycm = totCM[j][1]-totCM[k][1];
+  // Initialise the arrays
+  cosAvg = vector<double>(nbins, 0.0);
+  sinAvg = vector<double>(nbins, 0.0);
+  count = vector<long>(nbins, 0L);
+  dr = vector<vector<double> >(npoints, vec);
+
+#pragma omp for schedule(dynamic, 10)
+  for (n = 0; n < endShiftBin; n++) {
+    for (m = n; m < nbins; m++) {
+      ibin = m-n;
+      dxcm = totCM[n][0]-totCM[m][0];
+      dycm = totCM[n][1]-totCM[m][1];
+      for (i = 0; i < npoints; i++) {
+	dr[i][0] = (*pos)[i][n][0]-(*pos)[i][m][0]-dxcm;
+	dr[i][1] = (*pos)[i][n][1]-(*pos)[i][m][1]-dycm;
+      }
+      for (j = 0; j < nqvec; j++) {
 	for (i = 0; i < npoints; i++) {
-	  dx = ((*pos)[i][j][0]-(*pos)[i][k][0])-dxcm;
-	  dy = ((*pos)[i][j][1]-(*pos)[i][k][1])-dycm;
-	  r2 = dx*dx + dy*dy;
-	  r4 = r2*r2;
-	  r2avg[ibin] += r2;
-	  r4avg[ibin] += r4;
+	  qdr = qvec[j][0]*dr[i][0]+qvec[j][1]*dr[i][1];
+	  cosAvg[ibin] += cos(qdr);
+	  sinAvg[ibin] += sin(qdr);
+	  count[ibin]++;
 	}
-	count[ibin] += npoints;
-      }     
+      }
     }
-
-    for (i = 0; i < nbins; i++) {
-#pragma omp atomic
-      totR2Avg[i] += r2avg[i];
-#pragma omp atomic
-      totR4Avg[i] += r4avg[i];
-#pragma omp atomic
-      totCount[i] += count[i];
-    }
-}
-  // Normalise results
-  for (i = 1; i < nbins; i++) { // first 
-    totR2Avg[i] /= static_cast<double>(totCount[i]);
-    totR4Avg[i] /= static_cast<double>(totCount[i]);
   }
+  
+  // Add all the reuslts together
+  for (i = 0; i < nbins; i++) {
+#pragma omp atomic
+    totCosAvg[i] += cosAvg[i];
+#pragma omp atomic
+    totSinAvg[i] += sinAvg[i];
+#pragma omp atomic
+    totCount[i] += count[i];
+  }
+}
+  
+  // Normalise
+  for (i = 0; i < nbins; i++) {
+    totCosAvg[i] /= static_cast<double>(totCount[i]);
+    totSinAvg[i] /= static_cast<double>(totCount[i]);
+  } 
 
   // Output results
   ofstream writer;
@@ -151,7 +174,8 @@ int main (int argc, char* argv[]) {
   writer << std::fixed << std::setprecision(10);
 
   for (i = 0; i < nbins; i++) {
-    writer << (i*timeInc) << " " << totR2Avg[i] << " " << totR4Avg[i] << endl;
+    writer << (i*timeInc) << " " << totCosAvg[i] << " " 
+	   << totSinAvg[i] << endl;
   }
   writer.close();
 
