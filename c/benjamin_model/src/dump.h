@@ -35,5 +35,9 @@ Dump* createFieldDump(char* filename, int printInc, bool overwrite);
 Dump* createCMDump(char* filename, int printInc, bool overwrite);
 Dump* createBulkCMDump(char* filenmae, int printInc);
 Dump* createGyrationDump(char* filename, int printInc, bool overwrite);
+Dump* createShapeDump(char* filename, int scale, int lx, int ly,
+		      int kernelLength, double sigma, int sgolayDegree,
+		      int sgolayLength, double threshold, int printInc,
+		      bool overwrite);
 
 #endif
