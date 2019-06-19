@@ -29,14 +29,19 @@ int main (int argc, char* argv[]) {
 
   char line [80], dumpMode [80];
   char cmFile [DIR_SIZE], shapeFile [DIR_SIZE], dumpFile [DIR_SIZE];
-  double phi0, M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
-  int cellLx, cellLy, lx, ly, nequil, nsteps, ncells;
+  double phi0 = -1.0;
+  double M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
+  int cellLx = -1;
+  int cellLy = -1;
+  int lx, ly, nequil, nsteps, ncells;
   unsigned long seed;
   int nparams = 0;
   int ndumps = 0;
   int nedumps = 0;
   int maxDumps = 50;
   int printInc, overwrite, cellIndex;
+  int fieldScale, kernelLength, sgolayDegree, sgolayLength;
+  double kernelSigma;
   Dump** equilDumps = malloc(sizeof *equilDumps * maxDumps);
   Dump** dumps = malloc(sizeof *dumps * maxDumps);
 
@@ -63,6 +68,7 @@ int main (int argc, char* argv[]) {
     nparams += sscanf(line, "seed = %ld", &seed);
     
     // Read dumps
+    // CM dump
     if (sscanf(line, "dump_cm %d %d %s %s", 
 	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
@@ -73,6 +79,7 @@ int main (int argc, char* argv[]) {
 	ndumps++; 
       }
     }
+    // Bulk CM dump
     if (sscanf(line, "dump_bulk_cm %d %s %s",
 	       &printInc, dumpMode, dumpFile) == 3) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
@@ -83,6 +90,7 @@ int main (int argc, char* argv[]) {
 	ndumps++; 
       }
     }
+    // Gyration dump
     if (sscanf(line, "dump_gyr %d %d %s %s",
 	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
@@ -94,6 +102,7 @@ int main (int argc, char* argv[]) {
 	ndumps++;
       }
     }
+    // Total field dump
     if (sscanf(line, "dump_field %d %d %s %s",
 	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
@@ -104,6 +113,7 @@ int main (int argc, char* argv[]) {
 	ndumps++;
       }
     }
+    // Individual cell field dump
     if (sscanf(line, "dump_cell_field %d %d %d %s %s",
 	       &cellIndex, &printInc, &overwrite, dumpMode, dumpFile) == 5) {
       if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
@@ -116,6 +126,30 @@ int main (int argc, char* argv[]) {
 	ndumps++;
       }
     }
+    // Shape dump
+    if (sscanf(line, "dump_shape %d %d %lf %d %d %d %d %s %s",
+	       &fieldScale, &kernelLength, &kernelSigma,
+	       &sgolayDegree, &sgolayLength,
+	       &printInc, &overwrite, dumpMode, dumpFile) == 9) {
+      // Only created the dump when cell field size and phi0 are known,
+      // as they are needed for creating the shape analysers
+      if (cellLx > 0 && cellLy > 0 && phi0 >= 0.0) {
+	if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	  equilDumps[nedumps] =
+	    createShapeDump(dumpFile, fieldScale, cellLx, cellLy,
+			    kernelLength, kernelSigma, sgolayDegree,
+			    sgolayLength, phi0/2.0, printInc, overwrite);
+	  nedumps++;
+	} else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	  dumps[ndumps] =
+	    createShapeDump(dumpFile, fieldScale, cellLx, cellLy,
+			    kernelLength, kernelSigma, sgolayDegree,
+			    sgolayLength, phi0/2.0, printInc, overwrite);
+	  ndumps++;
+	}
+      }
+    }
+
   }
   equilDumps = realloc(equilDumps, sizeof *equilDumps * nedumps);
   dumps = realloc(dumps, sizeof *dumps * ndumps);

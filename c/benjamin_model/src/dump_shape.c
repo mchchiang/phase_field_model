@@ -48,6 +48,8 @@ void shapeOutput(ShapeDump* dump, PhaseFieldModel* model, int step) {
     }
   }
   // Output the shape data to file
+  fprintf(f, "Cells: %d\n", model->numOfCells);
+  fprintf(f, "Timestep: %d\n", step);
   for (int i = 0; i < ncells; i++) {
     fprintf(f, "%.5f %.5f %.5f\n", data[i][0], data[i][1], data[i][2]);
   }

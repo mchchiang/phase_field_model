@@ -129,7 +129,6 @@ Point* traceBoundary(double threshold, Image* image, int* npts) {
   int ptcount = 0;
   pt.x = startpt.x;
   pt.y = startpt.y;
-  printf("%d %d\n", pt.x, pt.y);
   
   // Use the Moore-Neighbour algorithm to trace the boundary
   do {
