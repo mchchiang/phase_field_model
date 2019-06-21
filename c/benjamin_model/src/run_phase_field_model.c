@@ -33,7 +33,9 @@ int main (int argc, char* argv[]) {
   double M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
   int cellLx = -1;
   int cellLy = -1;
-  int lx, ly, nequil, nsteps, ncells;
+  int lx = -1;
+  int ly = -1;
+  int nequil, nsteps, ncells;
   unsigned long seed;
   int nparams = 0;
   int ndumps = 0;
@@ -126,6 +128,23 @@ int main (int argc, char* argv[]) {
 	ndumps++;
       }
     }
+    // Neighbour dump
+    if (sscanf(line, "dump_neighbour %d %d %s %s",
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
+      // Only created the dump when the field size is known,
+      // as it is needed for creating the neighbour analysers
+      if (lx > 0 && ly > 0) {
+	if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	  equilDumps[nedumps] =
+	    createNeighbourDump(dumpFile, lx, ly, printInc, overwrite);
+	  nedumps++;
+	} else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	  dumps[ndumps] =
+	    createNeighbourDump(dumpFile, lx, ly, printInc, overwrite);
+	  ndumps++;
+	}
+      }
+    }
     // Shape dump
     if (sscanf(line, "dump_shape %d %d %lf %d %d %d %d %s %s",
 	       &fieldScale, &kernelLength, &kernelSigma,
@@ -203,25 +222,38 @@ int main (int argc, char* argv[]) {
   
   model->dt = dt;
 
-  double start, end, duration;
   printf("Doing equilibration run ...\n");
+
+#ifdef _OPENMP
+  double start, end, duration;
   start = omp_get_wtime();
+#endif
   run(model, nequil);
+
+#ifdef _OPENMP
   end = omp_get_wtime();
   duration = end-start;
   printf("Time taken (sec): %.5f\n", duration);
   printf("\n");
+#endif
 
   model->motility = v;
   model->ndumps = ndumps;
   model->dumps = dumps;
 
   printf("Doing main simulation run ...\n");
+
+#ifdef _OPENMP
   start = omp_get_wtime();
+#endif
+
   run(model, nsteps);
+
+#ifdef _OPENMP
   end = omp_get_wtime();
   duration = end-start;
   printf("Time taken (sec): %.5f\n", duration);
+#endif
   
   deleteModel(model);
 
