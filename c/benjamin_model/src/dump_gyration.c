@@ -48,7 +48,7 @@ void deleteGyrationDump(GyrationDump* dump) {
 DumpFuncs gyrationDumpFuncs =
   {
    .output = (void (*)(Dump*, PhaseFieldModel*, int)) &gyrationOutput,
-   .delete = (void (*)(Dump*)) &deleteGyrationDump
+   .destroy = (void (*)(Dump*)) &deleteGyrationDump
   };
 
 Dump* createGyrationDump(char* filename, int printInc, bool overwrite) {

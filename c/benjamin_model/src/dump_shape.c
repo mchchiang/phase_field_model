@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <math.h>
 #include <omp.h>
 #include "dump.h"
 #include "phase_field_model.h"
@@ -39,7 +38,9 @@ void shapeOutput(ShapeDump* dump, PhaseFieldModel* model, int step) {
 #pragma omp parallel default(none) shared(ncells, dump, model, data) \
   private (j, id, cell)
   {
+#ifdef _OPENMP
     id = omp_get_thread_num();
+#endif
 #pragma omp for schedule(static)
     for (j = 0; j < ncells; j++) {
       cell = model->cells[j];
@@ -71,7 +72,7 @@ void deleteShapeDump(ShapeDump* dump) {
 DumpFuncs shapeDumpFuncs =
   {
    .output = (void (*)(Dump*, PhaseFieldModel*, int)) &shapeOutput,
-   .delete = (void (*)(Dump*)) &deleteShapeDump
+   .destroy = (void (*)(Dump*)) &deleteShapeDump
   };
 
 Dump* createShapeDump(char* filename, int scale, int lx, int ly,
@@ -82,7 +83,11 @@ Dump* createShapeDump(char* filename, int scale, int lx, int ly,
   setDump(&dump->super, dump, filename, printInc, &shapeDumpFuncs);
   dump->overwrite = overwrite;
   // Initialise the shape analysers
+#ifdef _OPENMP
   dump->nthreads = omp_get_max_threads();
+#else
+  dump->nthreads = 1;
+#endif
   dump->analysers = malloc(sizeof *dump->analysers * dump->nthreads);
   for (int i = 0; i < dump->nthreads; i++) {
     dump->analysers[i] = createShapeAnalyser(scale, lx, ly, kernelLength,

@@ -16,7 +16,7 @@ void setDump(Dump* dump, void* derived, char* filename, int printInc,
 
 void deleteDump(Dump* dump) {
   free(dump->filename);
-  dump->funcs->delete(dump);
+  dump->funcs->destroy(dump);
 }
 
 void dumpOutput(Dump* dump, PhaseFieldModel* model, int step) {

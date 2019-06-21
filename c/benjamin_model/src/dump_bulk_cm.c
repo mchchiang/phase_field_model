@@ -56,7 +56,7 @@ void deleteBulkCMDump(BulkCMDump* dump) {
 DumpFuncs bulkCMDumpFuncs =
   {
    .output = (void (*)(Dump*, PhaseFieldModel*, int)) &bulkCMOutput,
-   .delete = (void (*)(Dump*)) &deleteBulkCMDump
+   .destroy = (void (*)(Dump*)) &deleteBulkCMDump
   };
 
 Dump* createBulkCMDump(char* filename, int printInc) {

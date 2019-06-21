@@ -48,7 +48,7 @@ void deleteCellFieldDump(CellFieldDump* dump) {
 DumpFuncs cellFieldDumpFuncs =
   {
    .output = (void (*)(Dump*, PhaseFieldModel*, int)) &cellFieldOutput,
-   .delete = (void (*)(Dump*)) &deleteCellFieldDump
+   .destroy = (void (*)(Dump*)) &deleteCellFieldDump
   };
 
 Dump* createCellFieldDump(char* filename, int cellIndex,

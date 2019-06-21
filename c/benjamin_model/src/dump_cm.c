@@ -55,7 +55,7 @@ void deleteCMDump(CMDump* dump) {
 DumpFuncs cmDumpFuncs =
   {
    .output = (void (*)(Dump*, PhaseFieldModel*, int)) &cmOutput,
-   .delete = (void (*)(Dump*)) &deleteCMDump
+   .destroy = (void (*)(Dump*)) &deleteCMDump
   };
 
 Dump* createCMDump(char* filename, int printInc, bool overwrite) {

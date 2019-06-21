@@ -69,7 +69,7 @@ void deleteFieldDump(FieldDump* dump) {
 DumpFuncs fieldDumpFuncs =
   {
    .output = (void (*)(Dump*, PhaseFieldModel*, int)) &fieldOutput,
-   .delete = (void (*)(Dump*)) &deleteFieldDump
+   .destroy = (void (*)(Dump*)) &deleteFieldDump
   };
 
 Dump* createFieldDump(char* filename, int printInc, bool overwrite) {
