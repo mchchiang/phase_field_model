@@ -8,6 +8,7 @@
 #include <omp.h>
 #include "dump.h"
 #include "phase_field_model.h"
+#include "constant.h"
 
 int main (int argc, char* argv[]) {
   
@@ -204,7 +205,7 @@ int main (int argc, char* argv[]) {
   PhaseFieldModel* model = createModel(lx, ly, ncells);
   model->phi0 = phi0;
   model->M = M;
-  model->piR2phi02 = M_PI * R * R * phi0 * phi0;
+  model->piR2phi02 = PF_PI * R * R * phi0 * phi0;
   model->kappa = kappa;
   model->alpha = alpha;
   model->mu = mu;
