@@ -8,7 +8,7 @@
 void setDump(Dump* dump, void* derived, char* filename, int printInc,
 	     DumpFuncs* funcs) {
   dump->derived = derived;
-  dump->filename = malloc(sizeof *dump->filename * DIR_SIZE);
+  dump->filename = malloc(sizeof *dump->filename * PF_DIR_SIZE);
   strcpy(dump->filename, filename);
   dump->printInc = printInc;
   dump->funcs = funcs;

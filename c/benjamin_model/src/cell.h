@@ -5,11 +5,11 @@
 
 #include "random.h"
 
-#define CMSHIFT 2.0
+/*#define CMSHIFT 2.0
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288
-#endif
+#endif*/
 
 typedef struct {
   double** field[2]; // phase field

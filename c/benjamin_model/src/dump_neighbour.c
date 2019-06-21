@@ -17,7 +17,7 @@ typedef struct NeighbourDump {
 } NeighbourDump;
 
 void neighbourOutput(NeighbourDump* dump, PhaseFieldModel* model, int step) {
-  char tmpfile [DIR_SIZE];
+  char tmpfile [PF_DIR_SIZE];
   FILE* f;
   if (dump->overwrite) {
     strcpy(tmpfile, dump->super.filename);

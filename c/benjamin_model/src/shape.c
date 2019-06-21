@@ -6,6 +6,7 @@
 #include "image.h"
 #include "array.h"
 #include "shape.h"
+#include "constant.h"
 
 // Helper functions to compute the shape area, perimeter, and shape index
 void loadData(ShapeAnalyser* ana, double** data);
@@ -169,7 +170,7 @@ void getShapeInfo(ShapeAnalyser* ana, double** data, double* perimeter,
   *perimeter = computePerimeter(npts-1, theta, rad, drad)/ana->scale;
   
   // Calculate the perimeter to area ratio
-  *asphericity = (*perimeter)*(*perimeter)/((*area)*4.0*M_PI);
+  *asphericity = (*perimeter)*(*perimeter)/((*area)*4.0*PF_PI);
   
   // Clean up resources
   if (boundpts != NULL) {
@@ -214,7 +215,7 @@ void radialCoords(int npts, Point* boundpts, double xcm, double ycm,
 		     double* rad, double* theta) {
   // Get start angle
   double angle, nextAngle, startAngle, dangle;
-  double pi = M_PI;
+  double pi = PF_PI;
   double twopi = 2.0*pi;
   int iangle = 0; // For counting the number of times crossed the branch cut
   double dx = boundpts[0].x+0.5-xcm;

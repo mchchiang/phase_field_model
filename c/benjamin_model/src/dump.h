@@ -3,11 +3,14 @@
 #ifndef DUMP_H
 #define DUMP_H
 
-#define DIR_SIZE 500
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
+// Threshold for the number of chars in a file directory
+#ifndef PF_DIR_SIZE
+#define PF_DIR_SIZE 500
+#endif
 
 struct PhaseFieldModel;
 struct Dump;

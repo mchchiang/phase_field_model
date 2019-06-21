@@ -28,7 +28,7 @@ int main (int argc, char* argv[]) {
   }
 
   char line [80], dumpMode [80];
-  char cmFile [DIR_SIZE], shapeFile [DIR_SIZE], dumpFile [DIR_SIZE];
+  char cmFile [PF_DIR_SIZE], shapeFile [PF_DIR_SIZE], dumpFile [PF_DIR_SIZE];
   double phi0 = -1.0;
   double M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
   int cellLx = -1;

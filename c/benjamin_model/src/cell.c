@@ -7,6 +7,7 @@
 #include "cell.h"
 #include "array.h"
 #include "random.h"
+#include "constant.h"
 
 Cell* createCell(int x, int y, int lx, int ly,
 	       double dr, double incell, unsigned long seed) {
@@ -33,7 +34,7 @@ Cell* createCell(int x, int y, int lx, int ly,
   cell->volume = 0.0;
   cell->random = createRandom(seed);
   // pick a random 2D direction
-  cell->theta = randDouble(cell->random)*2.0*M_PI;
+  cell->theta = randDouble(cell->random)*2.0*PF_PI;
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
   cell->gyration = create1DDoubleArray(3);
@@ -103,7 +104,7 @@ void updateCM(Cell* cell) {
   cell->deltaXCM += (cell->xcm - oldXCM);
   cell->deltaYCM += (cell->ycm - oldYCM);
 
-  if (fabs(cell->deltaXCM) > CMSHIFT || fabs(cell->deltaYCM) > CMSHIFT) {
+  if (fabs(cell->deltaXCM) > PF_CMSHIFT || fabs(cell->deltaYCM) > PF_CMSHIFT) {
     int xShift = (int)(round(cell->deltaXCM));
     int yShift = (int)(round(cell->deltaYCM));
     shiftCoordinates(cell, xShift, yShift);

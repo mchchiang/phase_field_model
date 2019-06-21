@@ -9,6 +9,7 @@
 #include "cell.h"
 #include "phase_field_model.h"
 #include "dump.h"
+#include "constant.h"
 
 PhaseFieldModel* createModel(int lx, int ly, int ncells) {
   PhaseFieldModel* model =  malloc(sizeof *model);
@@ -17,7 +18,7 @@ PhaseFieldModel* createModel(int lx, int ly, int ncells) {
   model->numOfCells = ncells;
   model->dt = 0.01;
   model->phi0 = 1.0;
-  model->piR2phi02 = M_PI;
+  model->piR2phi02 = PF_PI;
   model->kappa = 0.0;
   model->alpha = 0.0;
   model->mu = 0.0;

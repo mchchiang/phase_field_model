@@ -17,7 +17,7 @@ typedef struct FieldDump {
 } FieldDump;
 
 void fieldOutput(FieldDump* dump, PhaseFieldModel* model, int step) {
-  char tmpfile [DIR_SIZE];
+  char tmpfile [PF_DIR_SIZE];
   if (dump->overwrite) {
     strcpy(tmpfile, dump->super.filename);
     strcat(tmpfile, ".tmp");
