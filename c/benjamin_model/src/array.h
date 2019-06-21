@@ -6,5 +6,6 @@
 double* create1DDoubleArray(int len);
 double** create2DDoubleArray(int len1, int len2);
 int* create1DIntArray(int len);
+int** create2DIntArray(int len1, int len2);
 
 #endif
