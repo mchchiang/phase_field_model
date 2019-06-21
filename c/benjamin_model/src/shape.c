@@ -247,6 +247,10 @@ void radialCoords(int npts, Point* boundpts, double xcm, double ycm,
 
 void shapeGradient(int len, double* x, double* y, double* yprime) {
   // Note that the size of yprime should be one less than that of y
+  // The algorithm for calculating the derivative is based on the
+  // finite difference method presented in the paper "A simple
+  // finite-difference grid with non-constant intervals" by Sundqvist and
+  // Veronis, Tellus 22 (1970)
   int iu, id;
   int yprimeLen = len-1;
   double* dx = create1DDoubleArray(yprimeLen);
@@ -265,6 +269,7 @@ void shapeGradient(int len, double* x, double* y, double* yprime) {
 }
 
 double computeArea(int npts, double* theta, double* r) {
+  // Compute the area by A = 0.5 * int_0^{2pi} dtheta r^2(theta) 
   double* r2 = create1DDoubleArray(npts);
   for (int i = 0; i < npts; i++) {
     r2[i] = r[i]*r[i];
@@ -276,6 +281,7 @@ double computeArea(int npts, double* theta, double* r) {
 
 
 double computePerimeter(int npts, double* theta, double* r, double* dr) {
+  // Compute the perimeter by P = int_0^{2pi} dtheta sqrt(r^2+dr^2)
   double* dl = create1DDoubleArray(npts);
   for (int i = 0; i < npts; i++) {
     dl[i] = sqrt(r[i]*r[i]+dr[i]*dr[i]);
@@ -286,6 +292,7 @@ double computePerimeter(int npts, double* theta, double* r, double* dr) {
 }
 
 double trapzInt(int nbins, double* x, double* y) {
+  // Numerical integration using the trapezoidal method
   double total = 0.0;
   for (int i = 0; i < nbins-1; i++) {
     total += (y[i+1]+y[i])*(x[i+1]-x[i])/2.0;
