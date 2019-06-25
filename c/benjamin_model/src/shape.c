@@ -17,6 +17,7 @@ void shapeGradient(int len, double* x, double* y, double* yprime);
 double computeArea(int npts, double* theta, double* r);
 double computePerimeter(int npts, double* theta, double* r, double* dr);
 double trapzInt(int nbins, double* x, double* y);
+void insertSort(int npts, double* key, double* value);
 
 ShapeAnalyser* createShapeAnalyser(int scale, int dataLx, int dataLy,
 				   int kernelLen, double sigma,
@@ -112,6 +113,8 @@ void getShapeInfo(ShapeAnalyser* ana, double** data, double* perimeter,
   // Create a periodic extension so that the smoothing process
   // can handle the end points well
   int extLen = ana->sgolayLength-1;
+  //int filtLen = ((npts*2-1)/2)*2+1; // Make sure it is an odd number
+  //int extLen = filtLen-1;
   int halfExtLen = extLen/2;
   int fullLen = extLen+npts;
   double* radExt = create1DDoubleArray(fullLen);
@@ -122,7 +125,9 @@ void getShapeInfo(ShapeAnalyser* ana, double** data, double* perimeter,
   
   // Smooth radial data using Sgolay filter
   double* radExtFiltered = create1DDoubleArray(fullLen);
+  //Filter* sgofilt = createSgolayFilter(ana->sgolayDegree, filtLen);  
   sgolayfilt(ana->sgolayRad, fullLen, radExt, radExtFiltered);
+  //sgolayfilt(sgofilt, fullLen, radExt, radExtFiltered);
 
   // Output the raw and smoothed radial data
   /*f = fopen("radial_c.dat", "w");
@@ -138,36 +143,46 @@ void getShapeInfo(ShapeAnalyser* ana, double** data, double* perimeter,
   }
 
   // Compute the first derivative (dr/dtheta)
-  double* drad = create1DDoubleArray(npts-1);
+  int nptsm1 = npts-1;
+  double* drad = create1DDoubleArray(nptsm1);
   shapeGradient(npts, theta, rad, drad);
   
   // Smooth the gradient data
+  for (int i = 0; i < nptsm1; i++) {
+    int iu = (i+1+nptsm1)%(nptsm1);
+    int id = (i-1+nptsm1)%(nptsm1);
+    if (fabs(drad[i]) > 100) {
+      drad[i] = (drad[iu]+drad[id])/2.0;
+    }
+  }
+  
   double* dradExt = create1DDoubleArray(fullLen-1);
   double* dradExtFiltered = create1DDoubleArray(fullLen-1);
   for (int i = 0; i < fullLen-1; i++) {
-    int j = (npts+i-halfExtLen-1)%(npts-1);
+    int j = (npts+i-halfExtLen-1)%(nptsm1);
     dradExt[i] = drad[j];
   }
-
+  
   sgolayfilt(ana->sgolayDrad, fullLen-1, dradExt, dradExtFiltered);
-
+  //sgolayfilt(sgofilt, fullLen-1, dradExt, dradExtFiltered);
+  //deleteSgolayFilter(sgofilt);
   // Output the smoothed radial data
   /*f = fopen("grad_radial_c.dat", "w");
-  for (int i = 0; i < npts-1; i++) {
+  for (int i = 0; i < nptsm1; i++) {
     fprintf(f, "%.5f %.5f %.5f\n", theta[i], drad[i],
 	    dradExtFiltered[i+halfExtLen]);
   }
   fclose(f);*/
 
-  for (int i = 0; i < npts-1; i++) {
+  for (int i = 0; i < nptsm1; i++) {
     drad[i] = dradExtFiltered[i+halfExtLen];
   }
 
   // Compute area
-  *area = computeArea(npts-1, theta, rad)/(ana->scale*ana->scale);
+  *area = computeArea(nptsm1, theta, rad)/(ana->scale*ana->scale);
   
   // Compute perimeter
-  *perimeter = computePerimeter(npts-1, theta, rad, drad)/ana->scale;
+  *perimeter = computePerimeter(nptsm1, theta, rad, drad)/ana->scale;
   
   // Calculate the perimeter to area ratio
   *asphericity = (*perimeter)*(*perimeter)/((*area)*4.0*PF_PI);
@@ -244,6 +259,8 @@ void radialCoords(int npts, Point* boundpts, double xcm, double ycm,
     theta[i] = angle;
     rad[i] = sqrt(dx*dx+dy*dy);
   }
+  // Sort the angles
+  insertSort(npts, theta, rad);
 }
 
 void shapeGradient(int len, double* x, double* y, double* yprime) {
@@ -299,4 +316,23 @@ double trapzInt(int nbins, double* x, double* y) {
     total += (y[i+1]+y[i])*(x[i+1]-x[i])/2.0;
   }
   return total;
+}
+
+// An implementation of the insertion sort algorithm for
+// sorting a key-value pair array based on the key values
+void insertSort(int npts, double* key, double* value) {
+  double tmpKey, tmpValue;
+  int j;
+  for (int i = 1; i < npts; i++) {
+    tmpKey = key[i];
+    tmpValue = value[i];
+    j = i-1;
+    while (j >= 0 && key[j] > tmpKey) {
+      key[j+1] = key[j];
+      value[j+1] = value[j];
+      j--;
+    }
+    key[j+1] = tmpKey;
+    value[j+1] = tmpValue;
+  }
 }

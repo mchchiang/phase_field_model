@@ -93,13 +93,13 @@ void conv(Image* kernel, Image* image, Image* convImage) {
   }
 }
 
-//void traceBoundary(double threshold, Image* image, int* npts, Point** pts) {
 Point* traceBoundary(double threshold, Image* image, int* npts) {
   // Retreive image data
   double** imageData = image->data;
   
   // Store the eight direction vectors
-  Point dir[8] = {{0,1},{1,1},{1,0},{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1}};
+  //Point dir[8] = {{0,1},{1,1},{1,0},{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1}};
+  Point dir[8] = {{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{1,1}};
 
   // Array to store the boundary points
   int maxpts = image->lx*2+image->ly*2;
@@ -147,7 +147,7 @@ Point* traceBoundary(double threshold, Image* image, int* npts) {
       boundpts = newpts;
       maxpts *= 2;
     }
-    // Search for the next boundary point in a clockwise direction
+    // Search for the next boundary point in an anti-clockwise direction
     idir -= 4; // Direction to backtrack to previous point
     if (idir < 0) idir += 8;
     else if (idir >= 8) idir -= 8;
