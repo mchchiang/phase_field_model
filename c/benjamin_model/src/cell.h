@@ -5,12 +5,6 @@
 
 #include "random.h"
 
-/*#define CMSHIFT 2.0
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327950288
-#endif*/
-
 typedef struct {
   double** field[2]; // phase field
   int setIndex;
@@ -40,7 +34,6 @@ void deleteCell(Cell* cell);
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0);
 void initField(Cell* cell, double** field);
 void updateCM(Cell* cell);
-void updateGyration(Cell* cell);
 void updateVolume(Cell* cell);
 void updateVelocity(Cell* cell, double dt);
 void shiftCoordinates(Cell* cell, int xShift, int yShift);

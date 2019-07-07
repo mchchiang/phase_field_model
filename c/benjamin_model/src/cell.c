@@ -135,33 +135,6 @@ void updateVelocity(Cell* cell, double dt) {
   cell->vy = sin(cell->theta);
 }
 
-void updateGyration(Cell* cell) {
-  // Assume centre of mass is updated
-  double gxx = 0.0;
-  double gxy = 0.0;
-  double gyy = 0.0;
-  double dx, dy;
-  int count = 0;
-  for (int i = 0; i < cell->lx; i++) {
-    for (int j = 0; j < cell->ly; j++) {
-      if (cell->field[cell->getIndex][i][j] > cell->incell) {
-	dx = i+0.5-cell->xcm;
-	dy = j+0.5-cell->ycm;
-	gxx += dx*dx;
-	gyy += dy*dy;
-	gxy += dx*dy;
-	count++;
-      }
-    }
-  }
-  gxx /= (double) count;
-  gxy /= (double) count;
-  gyy /= (double) count;
-  cell->gyration[0] = gxx;
-  cell->gyration[1] = gyy;
-  cell->gyration[2] = gxy;
-}
-
 void shiftCoordinates(Cell* cell, int xShift, int yShift) {
   startUpdateCellField(cell);
   int set = cell->setIndex;

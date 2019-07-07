@@ -14,6 +14,8 @@ typedef struct GyrationDump {
   bool overwrite;
 } GyrationDump;
 
+void computeGyration(Cell* cell, double* gxx, double* gyy, double* gxy); 
+
 void gyrationOutput(GyrationDump* dump, PhaseFieldModel* model, int step) {
   char tmpfile [PF_DIR_SIZE];
   FILE* f;
@@ -24,15 +26,12 @@ void gyrationOutput(GyrationDump* dump, PhaseFieldModel* model, int step) {
   } else {
     f = fopen(dump->super.filename, "a");
   }
-  Cell* cell;
+  
   double gxx, gyy, gxy;
   fprintf(f, "Cells: %d\n", model->numOfCells);
   fprintf(f, "Timestep: %d\n", step);
   for (int i = 0; i < model->numOfCells; i++) {
-    cell = model->cells[i];
-    gxx = cell->gyration[0];
-    gyy = cell->gyration[1];
-    gxy = cell->gyration[2];
+    computeGyration(model->cells[i], &gxx, &gyy, &gxy);
     fprintf(f, "%.5f %.5f %.5f\n", gxx, gyy, gxy);
   }
   fclose(f);
@@ -56,4 +55,28 @@ Dump* createGyrationDump(char* filename, int printInc, bool overwrite) {
   setDump(&dump->super, dump, filename, printInc, &gyrationDumpFuncs);
   dump->overwrite = overwrite;
   return (Dump*) dump;
+}
+
+void computeGyration(Cell* cell, double* gxx, double* gyy, double* gxy) {
+  // Assume centre of mass is updated
+  *gxx = 0.0;
+  *gxy = 0.0;
+  *gyy = 0.0;
+  double dx, dy;
+  int count = 0;
+  for (int i = 0; i < cell->lx; i++) {
+    for (int j = 0; j < cell->ly; j++) {
+      if (cell->field[cell->getIndex][i][j] > cell->incell) {
+	dx = i+0.5-cell->xcm;
+	dy = j+0.5-cell->ycm;
+	*gxx += dx*dx;
+	*gyy += dy*dy;
+	*gxy += dx*dy;
+	count++;
+      }
+    }
+  }
+  *gxx /= (double) count;
+  *gxy /= (double) count;
+  *gyy /= (double) count;
 }

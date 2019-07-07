@@ -163,7 +163,6 @@ void run(PhaseFieldModel* model, int nsteps) {
       updateCellVolume(model, cell);
       updateCellField(model, cell);
       updateCellCM(model, cell, i);
-      updateGyration(cell);
       updateVelocity(cell, model->dt);
     }
     }
