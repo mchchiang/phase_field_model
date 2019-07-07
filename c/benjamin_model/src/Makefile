@@ -1,11 +1,11 @@
 
-# CC := gcc
-CC := gcc-9
+CC := gcc
+# CC := gcc-9
 CFLAGS := -Wall -Wshadow -Winline -O3 -std=c11 -fopenmp
 #CFLAGS := -Wall -Wshadow -Winline -O3 -std=c11
 
-# CXX := g++
-CXX := g++-9
+CXX := g++
+# CXX := g++-9
 CXXFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11
 
 INC := -I../../mtwister/ -I../../arralloc/
