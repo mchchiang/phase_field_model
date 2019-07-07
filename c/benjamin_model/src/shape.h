@@ -31,12 +31,20 @@ typedef struct ShapeAnalyser {
   Filter* sgolayDrad;
 } ShapeAnalyser;
 
+typedef struct ShapeInfo {
+  int pixels; 
+  double area;
+  double pixelArea;
+  double perimeter;
+  double chainPerimeter;
+} ShapeInfo;
+
 ShapeAnalyser* createShapeAnalyser(int scale, int dataLx, int dataLy,
 				   int kernelLength, double sigma,
 				   int sgolayDegree, int sgolayLength, 
 				   double threshold);
 void deleteShapeAnalyser(ShapeAnalyser* ana);
-void getShapeInfo(ShapeAnalyser* ana, double** data, double* perimeter,
-		  double* area, double* asphericity);
+ShapeInfo* getShapeInfo(ShapeAnalyser* ana, double** data);
+void deleteShapeInfo(ShapeInfo* shapeInfo);
 
 #endif

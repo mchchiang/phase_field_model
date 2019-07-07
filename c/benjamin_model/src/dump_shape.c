@@ -11,6 +11,7 @@
 #include "cell.h"
 #include "shape.h"
 #include "array.h"
+#include "constant.h"
 
 typedef struct ShapeDump {
   Dump super; // Base struct must be the first element
@@ -33,32 +34,46 @@ void shapeOutput(ShapeDump* dump, PhaseFieldModel* model, int step) {
   int j;
   int id = 0;
   int ncells = model->numOfCells;
-  double** data = create2DDoubleArray(ncells, 3);
+  ShapeInfo** info = malloc(sizeof *info * ncells);
   Cell* cell;
-#pragma omp parallel default(none) shared(ncells, dump, model, data) \
-  private (j, id, cell)
+  ShapeAnalyser* analyser;
+#pragma omp parallel default(none) \
+  shared(ncells, dump, model, info)	\
+  private (j, id, cell, analyser)
   {
 #ifdef _OPENMP
     id = omp_get_thread_num();
 #endif
+    analyser = dump->analysers[id];
 #pragma omp for schedule(static)
     for (j = 0; j < ncells; j++) {
       cell = model->cells[j];
-      getShapeInfo(dump->analysers[id], cell->field[cell->getIndex],
-		   &data[j][0], &data[j][1], &data[j][2]);
+      info[j] = getShapeInfo(analyser, cell->field[cell->getIndex]);
     }
   }
   // Output the shape data to file
   fprintf(f, "Cells: %d\n", model->numOfCells);
   fprintf(f, "Timestep: %d\n", step);
+  int pixels;
+  double perimeter, area, pixelArea, chainPerimeter;
   for (int i = 0; i < ncells; i++) {
-    fprintf(f, "%.5f %.5f %.5f\n", data[i][0], data[i][1], data[i][2]);
+    pixels = info[i]->pixels;
+    area = info[i]->area;
+    perimeter = info[i]->perimeter;
+    pixelArea = info[i]->pixelArea;
+    chainPerimeter = info[i]->chainPerimeter;
+    fprintf(f, "%.5f %.5f %.5f %.5f %d\n", perimeter, area,
+	    chainPerimeter, pixelArea, pixels);
   }
   fclose(f);
   if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }
-  free(data);
+
+  // Clean up resources
+  for (int i = 0; i < ncells; i++) {
+    deleteShapeInfo(info[i]);
+  }
 }
 
 void deleteShapeDump(ShapeDump* dump) {

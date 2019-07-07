@@ -14,6 +14,9 @@ void computeCM(Image* image, double* xcm, double* ycm);
 void radialCoords(int npts, Point* points, double xcm, double ycm,
 		  double* rad, double* theta);
 void shapeGradient(int len, double* x, double* y, double* yprime);
+void threePtGradient(int len, double* x, double* y, double* yprime);
+int computePixelArea(int lx, int ly, double threshold, double** field);
+double computeChainPerimeter(int npts, int* chain);
 double computeArea(int npts, double* theta, double* r);
 double computePerimeter(int npts, double* theta, double* r, double* dr);
 double trapzInt(int nbins, double* x, double* y);
@@ -23,7 +26,7 @@ ShapeAnalyser* createShapeAnalyser(int scale, int dataLx, int dataLy,
 				   int kernelLen, double sigma,
 				   int sgolayDegree, int sgolayLen, 
 				   double threshold) {
-  ShapeAnalyser* ana = (ShapeAnalyser*) malloc(sizeof(*ana));
+  ShapeAnalyser* ana = malloc(sizeof(*ana));
   ana->scale = scale;
   ana->dataLx = dataLx;
   ana->dataLy = dataLy;
@@ -37,9 +40,6 @@ ShapeAnalyser* createShapeAnalyser(int scale, int dataLx, int dataLy,
   ana->convImage = createEmptyImage(ana->lx, ana->ly);
 
   // Create the Gaussian blurring kernels (two 1-D kernels)
-  /*double sigma = 4.0;
-  int sigmaInt = (int) (ceil(sigma));
-  int kernelL = 6*sigmaInt-sigmaInt%2+1;*/
   ana->gaussX = createGaussianKernel(kernelLen, 1, sigma);
   ana->gaussY = createGaussianKernel(1, kernelLen, sigma);
 
@@ -64,140 +64,160 @@ void deleteShapeAnalyser(ShapeAnalyser* ana) {
   free(ana);
 }
 
-void getShapeInfo(ShapeAnalyser* ana, double** data, double* perimeter,
-		  double* area, double* asphericity) {
+ShapeInfo* getShapeInfo(ShapeAnalyser* ana, double** data) {
+  double twopi = 2.0*PF_PI;
+  
   // Rescale the phase field data to the image
   loadData(ana, data);
-
-  /*FILE* f = fopen("raw_c.dat", "w");
-  for (int i = 0; i < ana->lx; i++) {
-    for (int j = 0; j < ana->ly; j++) {
-      fprintf(f, "%d %d %.5f\n", i, j, ana->rawImage->data[i][j]);
-    }
-  }
-  fclose(f);*/
   
   // Blur the image using a Gaussian filter
   conv(ana->gaussX, ana->rawImage, ana->intermImage);
   conv(ana->gaussY, ana->intermImage, ana->convImage);
 
-  // Output the convolved image
-  /*f = fopen("conv_c.dat", "w");
-  for (int i = 0; i < ana->lx; i++) {
-    for (int j = 0; j < ana->ly; j++) {
-      fprintf(f, "%d %d %.5f\n", i, j, ana->convImage->data[i][j]);
-    }
-  }
-  fclose(f);*/
-  
   // Find centre of mass
   double xcm, ycm;
   computeCM(ana->convImage, &xcm, &ycm);
-    
-  // Trace the boundary
-  int npts; // Total number of boundary points
-  Point* boundpts = traceBoundary(ana->threshold, ana->convImage, &npts);
   
-  // Output boundary points
-  /*f = fopen("pts_c.dat", "w");
-  for (int i = 0; i < npts; i++) {
-    fprintf(f, "%d %d\n", boundpts[i].x, boundpts[i].y);
-  }
-  fclose(f);*/
+  // Trace the boundary
+  Boundary* boundary = traceBoundary(ana->threshold, ana->convImage);
+  int npts = boundary->npoints; // Total number of boundary points
+  int nptsp1 = npts+1;
+  Point* boundpts = boundary->points;
   
   // Determine the radial coordinates
-  double* theta = create1DDoubleArray(npts);
-  double* rad = create1DDoubleArray(npts);
+  double* theta = create1DDoubleArray(nptsp1); // +1 for endpt = starpt
+  double* rad = create1DDoubleArray(nptsp1);
   radialCoords(npts, boundpts, xcm, ycm, rad, theta);
   
   // Create a periodic extension so that the smoothing process
-  // can handle the end points well
-  int extLen = ana->sgolayLength-1;
-  //int filtLen = ((npts*2-1)/2)*2+1; // Make sure it is an odd number
-  //int extLen = filtLen-1;
+  // can handle the boundary points as well
+  int extLen = ana->sgolayLength-1; // sgolayLength should be odd
   int halfExtLen = extLen/2;
   int fullLen = extLen+npts;
+  
   double* radExt = create1DDoubleArray(fullLen);
+  int ext = (halfExtLen/npts+1)*npts;
   for (int i = 0; i < fullLen; i++) {
-    int j = (npts+i-halfExtLen)%npts;
+    int j = (ext+i-halfExtLen)%npts;
     radExt[i] = rad[j];
   }
   
   // Smooth radial data using Sgolay filter
   double* radExtFiltered = create1DDoubleArray(fullLen);
-  //Filter* sgofilt = createSgolayFilter(ana->sgolayDegree, filtLen);  
-  sgolayfilt(ana->sgolayRad, fullLen, radExt, radExtFiltered);
-  //sgolayfilt(sgofilt, fullLen, radExt, radExtFiltered);
-
-  // Output the raw and smoothed radial data
-  /*f = fopen("radial_c.dat", "w");
-  for (int i = 0; i < npts; i++) {
-    fprintf(f, "%.5f %.5f %.5f\n", theta[i], rad[i],
-	    radExtFiltered[i+halfExtLen]);
-  }
-  fclose(f);*/
+  sgolayFilt(ana->sgolayRad, fullLen, radExt, radExtFiltered);
   
   // Extract the non-extended part of the filtered result
   for (int i = 0; i < npts; i++) {
     rad[i] = radExtFiltered[i+halfExtLen];
   }
-
+  
+  // Add in the endpt = startpt
+  theta[npts] = twopi;
+  rad[npts] = rad[0];
+  
   // Compute the first derivative (dr/dtheta)
-  int nptsm1 = npts-1;
-  double* drad = create1DDoubleArray(nptsm1);
-  shapeGradient(npts, theta, rad, drad);
+  double* drad = create1DDoubleArray(nptsp1);
+  shapeGradient(nptsp1, theta, rad, drad);
+  drad[npts] = drad[0]; // An approximation of the gradient at the boundary
   
-  // Smooth the gradient data
-  for (int i = 0; i < nptsm1; i++) {
-    int iu = (i+1+nptsm1)%(nptsm1);
-    int id = (i-1+nptsm1)%(nptsm1);
-    if (fabs(drad[i]) > 100) {
-      drad[i] = (drad[iu]+drad[id])/2.0;
+  // Identify numerically unstable points
+  int nbadpts = 0;
+  const int unstableThreshold = 100;
+  double* smoothRad = create1DDoubleArray(nptsp1);
+  for (int i = 0; i < npts; i++) { // Ignore endpt (which is equal to startpt)
+    smoothRad[i] = rad[i];
+    if (fabs(drad[i]) > unstableThreshold) {
+      rad[i] = -1.0;
+      nbadpts++;
     }
-  }
+  } 
   
-  double* dradExt = create1DDoubleArray(fullLen-1);
-  double* dradExtFiltered = create1DDoubleArray(fullLen-1);
-  for (int i = 0; i < fullLen-1; i++) {
-    int j = (npts+i-halfExtLen-1)%(nptsm1);
-    dradExt[i] = drad[j];
+  // Do Lagrange interpolation if there are numerically unstable points
+  if (nbadpts > 0) {
+    int twonpts = 2*npts;
+    int threenpts = 3*npts;
+    const int ninter = 4;
+    int nmid = ninter/2;
+    double xint[ninter];
+    double yint[ninter];
+    double lagcoeffs[ninter];
+    
+    for (int i = 0; i < npts; i++) {
+      // Find the unstable points
+      if (rad[i] < 0.0) {
+	int j = npts+i-1;
+	// Find the interpolation points
+	for (int k = 1; k <= nmid; k++) {
+	  while (rad[j%npts] < 0.0 && j > 0.0) j--;
+	  xint[nmid-k] = theta[j%npts];
+	  yint[nmid-k] = rad[j%npts];
+	  // Get the correct angle if the point
+	  // crosses the periodic boundary
+	  if (j < npts) xint[nmid-k] -= twopi;
+	  j--;
+	}
+	j = npts+i+1;
+	for (int k = nmid; k < ninter; k++) {
+	  while (rad[j%npts] < 0.0 && j < threenpts-1) j++;
+	  xint[k] = theta[j%npts];
+	  yint[k] = rad[j%npts];
+	  // Get the correct angle if the point
+	  // crosses the periodic boundary
+	  if (j >= twonpts) xint[k] += twopi; 
+	  j++;
+	}
+	// Calculate the interpolation coefficients
+	for (int k = 0; k < ninter; k++) {
+	  lagcoeffs[k] = yint[k];
+	  for (int l = 0; l < ninter; l++) {
+	    if (k != l) lagcoeffs[k] /= (xint[k]-xint[l]);
+	  }
+	}
+	// Calculate interpolated value
+	smoothRad[i] = 0.0;
+	for (int k = 0; k < ninter; k++) {
+	  double temp = 1.0;
+	  for (int l = 0; l < ninter; l++) {
+	    if (k != l) temp *= (theta[i]-xint[l]);
+	  }
+	  smoothRad[i] += temp*lagcoeffs[k];
+	}
+      }
+    }
+    smoothRad[npts] = smoothRad[0]; // Make sure endpt = startpt
+    
+    // Recompute dr/dtheta
+    shapeGradient(nptsp1, theta, smoothRad, drad);
+    drad[npts] = drad[0];
   }
-  
-  sgolayfilt(ana->sgolayDrad, fullLen-1, dradExt, dradExtFiltered);
-  //sgolayfilt(sgofilt, fullLen-1, dradExt, dradExtFiltered);
-  //deleteSgolayFilter(sgofilt);
-  // Output the smoothed radial data
-  /*f = fopen("grad_radial_c.dat", "w");
-  for (int i = 0; i < nptsm1; i++) {
-    fprintf(f, "%.5f %.5f %.5f\n", theta[i], drad[i],
-	    dradExtFiltered[i+halfExtLen]);
-  }
-  fclose(f);*/
 
-  for (int i = 0; i < nptsm1; i++) {
-    drad[i] = dradExtFiltered[i+halfExtLen];
-  }
-
-  // Compute area
-  *area = computeArea(nptsm1, theta, rad)/(ana->scale*ana->scale);
-  
-  // Compute perimeter
-  *perimeter = computePerimeter(nptsm1, theta, rad, drad)/ana->scale;
-  
-  // Calculate the perimeter to area ratio
-  *asphericity = (*perimeter)*(*perimeter)/((*area)*4.0*PF_PI);
+  double scale = ana->scale;
+  double scale2 = scale*scale;
+  ShapeInfo* info = malloc(sizeof *info);
+  info->pixels = computePixelArea(ana->dataLx, ana->dataLy,
+				  ana->threshold, data);
+  info->area = computeArea(nptsp1, theta, smoothRad) / scale2;
+  info->perimeter = computePerimeter(nptsp1, theta, smoothRad, drad) / scale;
+  info->pixelArea = computePixelArea(ana->lx, ana->ly, ana->threshold,
+				     ana->convImage->data) / scale2;
+  info->chainPerimeter = computeChainPerimeter(npts, boundary->chain) / scale;
   
   // Clean up resources
-  if (boundpts != NULL) {
-    free(boundpts);
+  if (boundary != NULL) {
+    deleteBoundary(boundary);
   }
   free(theta);
   free(rad);
   free(radExt);
   free(radExtFiltered);
-  free(dradExtFiltered);
   free(drad);
-  free(dradExt);
+  free(smoothRad);
+
+  return info;
+}
+
+void deleteShapeInfo(ShapeInfo* shapeInfo) {
+  free(shapeInfo);
 }
 
 void loadData(ShapeAnalyser* ana, double** data) {
@@ -227,7 +247,7 @@ void computeCM(Image* image, double* xcm, double* ycm) {
 }
 
 void radialCoords(int npts, Point* boundpts, double xcm, double ycm,
-		     double* rad, double* theta) {
+		  double* rad, double* theta) {
   // Get start angle
   double angle, nextAngle, startAngle, dangle;
   double pi = PF_PI;
@@ -265,6 +285,7 @@ void radialCoords(int npts, Point* boundpts, double xcm, double ycm,
 
 void shapeGradient(int len, double* x, double* y, double* yprime) {
   // Note that the size of yprime should be one less than that of y
+  // len should be the array length of x (or y)
   // The algorithm for calculating the derivative is based on the
   // finite difference method presented in the paper "A simple
   // finite-difference grid with non-constant intervals" by Sundqvist and
@@ -279,11 +300,64 @@ void shapeGradient(int len, double* x, double* y, double* yprime) {
   for (int i = 0; i < yprimeLen; i++) {
     iu = (i+1+yprimeLen)%yprimeLen;
     id = (i-1+yprimeLen)%yprimeLen;
-    dxRatio = dx[i]-dx[id];
+    dxRatio = dx[i]/dx[id];
     dxRatio2 = dxRatio*dxRatio;
     yprime[i] = (y[iu]-dxRatio2*y[id]-(1-dxRatio2)*y[i])/(dx[i]*(1+dxRatio));
   }
   free(dx);
+}
+
+void threePtGradient(int len, double* x, double* y, double* yprime) {
+  int i, iu, id, idd;
+  int dxLen = len-1;
+  double* dx = create1DDoubleArray(dxLen);
+  for (i = 0; i < dxLen; i++) {
+    dx[i] = x[i+1]-x[i];
+  }
+  double dxsum = dx[0]+dx[1];
+  // Start point
+  yprime[0] = -(dxsum+dx[0])/(dx[0]*dxsum)*y[0] + dxsum/(dx[0]*dx[1])*y[1] -
+    dx[0]/(dx[1]*dxsum)*y[2];
+  for (i = 1; i < len-1; i++) {
+    iu = i+1;
+    id = i-1;
+    dxsum = dx[id]+dx[i];
+    yprime[i] = -dx[i]/(dx[id]*dxsum)*y[id] -
+      (dx[id]-dx[i])/(dx[id]*dx[i])*y[i] + dx[id]/(dx[i]*dxsum)*y[iu];
+  }
+  // End point
+  i = len-1;
+  id = len-2;
+  idd = len-3;
+  dxsum = dx[id]+dx[idd];
+  yprime[i] = dx[id]/(dx[idd]*dxsum)*y[idd] - dxsum/(dx[idd]*dx[id])*y[id] +
+    (dxsum+dx[id])/(dx[id]*dxsum)*y[i];
+  free(dx);
+}
+
+int computePixelArea(int lx, int ly, double threshold, double** field) {
+  int sum = 0;
+  for (int i = 0; i < lx; i++)
+    for (int j = 0; j < ly; j++)
+      if (field[i][j] > threshold) sum++;
+  return sum; 
+}
+
+double computeChainPerimeter(int npts, int* chain) {
+  // Estimate the perimeter based on corner count algorithm by
+  // Proffitt and Rosen (Computer Graphics and Image Processing 20(4):347 1982)
+  int nnorm = 0;
+  int ndiag = 0;
+  int ncorner = 0;
+  for (int i = 0; i < npts; i++) {
+    if (chain[i] % 2 == 0) {
+      nnorm++;
+    } else {
+      ndiag++;
+    }
+    if (chain[(i+1)%npts] != chain[i]) ncorner++;
+  }
+  return nnorm*0.980 + ndiag*1.406 - ncorner*0.091;
 }
 
 double computeArea(int npts, double* theta, double* r) {
@@ -313,14 +387,14 @@ double trapzInt(int nbins, double* x, double* y) {
   // Numerical integration using the trapezoidal method
   double total = 0.0;
   for (int i = 0; i < nbins-1; i++) {
-    total += (y[i+1]+y[i])*(x[i+1]-x[i])/2.0;
+    total += (y[i+1]+y[i])*(x[i+1]-x[i]);
   }
-  return total;
+  return total/2.0;
 }
 
-// An implementation of the insertion sort algorithm for
-// sorting a key-value pair array based on the key values
 void insertSort(int npts, double* key, double* value) {
+  // An implementation of the insertion sort algorithm for
+  // sorting a key-value pair array based on the key values
   double tmpKey, tmpValue;
   int j;
   for (int i = 1; i < npts; i++) {
