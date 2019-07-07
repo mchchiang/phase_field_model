@@ -15,11 +15,20 @@ typedef struct Point {
   int y;
 } Point;
 
+typedef struct Boundary {
+  int npoints; // Number of points
+  Point* points; // The boundary points
+  int* chain; // The chain code
+} Boundary; 
+
 Image* createEmptyImage(int lx, int ly);
 Image* createImageFromData(int lx, int ly, double** data);
-void deleteImage(Image* image);
 Image* createGaussianKernel(int lx, int ly, double sigma);
+void deleteImage(Image* image);
+
+Boundary* traceBoundary(double threshold, Image* image);
+void deleteBoundary(Boundary* boundary);
+
 void conv(Image* image1, Image* image2, Image* convImage);
-Point* traceBoundary(double threshold, Image* image, int* npts);
 
 #endif

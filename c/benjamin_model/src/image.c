@@ -52,7 +52,7 @@ Image* createGaussianKernel(int lx, int ly, double sigma) {
       sum += value;
     }
   }
-
+  
   // Normalise
   for (int i = 0; i < lx; i++) {
     for (int j = 0; j < ly; j++) {
@@ -93,17 +93,17 @@ void conv(Image* kernel, Image* image, Image* convImage) {
   }
 }
 
-Point* traceBoundary(double threshold, Image* image, int* npts) {
+Boundary* traceBoundary(double threshold, Image* image) {
   // Retreive image data
   double** imageData = image->data;
   
   // Store the eight direction vectors
-  //Point dir[8] = {{0,1},{1,1},{1,0},{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1}};
   Point dir[8] = {{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{1,1}};
 
   // Array to store the boundary points
   int maxpts = image->lx*2+image->ly*2;
   Point* boundpts = malloc(sizeof *boundpts * maxpts);
+  int* chain = malloc(sizeof *chain * maxpts);
   
   // Find the starting point (the first point beyond the threshold)
   Point startpt = {-1,-1};
@@ -119,7 +119,6 @@ Point* traceBoundary(double threshold, Image* image, int* npts) {
   }
 
   if (!foundStart) {
-    *npts = 0; 
     return NULL;
   }
   
@@ -140,11 +139,16 @@ Point* traceBoundary(double threshold, Image* image, int* npts) {
     // the current length of the array
     if (ptcount >= maxpts) {
       Point* newpts;
+      int* newchain;
       newpts = realloc(boundpts, sizeof *boundpts * maxpts*2);
-      if (newpts == NULL) {
+      newchain = realloc(chain, sizeof *chain * maxpts*2);
+      if (newpts == NULL || newchain == NULL) {
+	if (newpts != NULL) free(newpts);
+	if (newchain != NULL) free(newchain);
 	break;
       }
       boundpts = newpts;
+      chain = newchain;
       maxpts *= 2;
     }
     // Search for the next boundary point in an anti-clockwise direction
@@ -161,22 +165,38 @@ Point* traceBoundary(double threshold, Image* image, int* npts) {
 	// Found the next boundary point
 	pt.x = nextpt.x;
 	pt.y = nextpt.y;
+	chain[ptcount-1] = idir; 
 	break;
       }
     }
   }  while (pt.x != startpt.x || pt.y != startpt.y);
 
   // Resize the array of boundary points to the actual size of the array
-  // Include an extra point for storing the end point = start point
   Point* newpts;
-  newpts = realloc(boundpts, sizeof *boundpts * (ptcount+1));
-  if (newpts == NULL) {
-    return boundpts;
+  int* newchain;
+  newpts = realloc(boundpts, sizeof *boundpts * ptcount);
+  newchain = realloc(chain, sizeof *chain * ptcount);
+  if (newpts == NULL || newchain == NULL) {
+    if (newpts != NULL) free(newpts);
+    if (newchain != NULL) free(newchain);
+    Boundary* boundary = malloc(sizeof *boundary);
+    boundary->points = boundpts;
+    boundary->chain = chain;
+    boundary->npoints = ptcount;
+    return boundary;
   }
   boundpts = newpts;
-  boundpts[ptcount].x = startpt.x;
-  boundpts[ptcount].y = startpt.y;
-  ptcount++;
-  *npts = ptcount;
-  return boundpts;
+  chain = newchain;
+  
+  Boundary* boundary = malloc(sizeof *boundary);
+  boundary->points = boundpts;
+  boundary->chain = chain;
+  boundary->npoints = ptcount;
+  return boundary;
+}
+
+void deleteBoundary(Boundary* boundary) {
+  free(boundary->points);
+  free(boundary->chain);
+  free(boundary);
 }
