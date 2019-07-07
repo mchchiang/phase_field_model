@@ -10,7 +10,10 @@ extern "C" {
   void deleteSgolayFilter(Filter* filter) {
     delete (SgolayFilter*) filter;
   }
-  void sgolayfilt(Filter* filter, int len, double* data, double* output) {
+  void sgolayFilt(Filter* filter, int len, double* data, double* output) {
     return ((SgolayFilter*) filter)->filter(len, data, output);
+  }
+  void sgolayDerivFilt(Filter* filter, int len, double* data, double* output) {
+    return ((SgolayFilter*) filter)->derivFilter(len, data, output);
   }
 }

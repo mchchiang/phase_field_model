@@ -13,7 +13,8 @@ extern "C" {
   typedef struct Filter Filter;
   Filter* createSgolayFilter(int degree, int npoints);
   void deleteSgolayFilter(Filter* filter);
-  void sgolayfilt(Filter* filter, int len, double* data, double* output);
+  void sgolayFilt(Filter* filter, int len, double* data, double* output);
+  void sgolayDerivFilt(Filter* filter, int len, double* data, double* output);
   
 #ifdef __cplusplus
 }
