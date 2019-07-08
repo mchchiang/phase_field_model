@@ -35,6 +35,7 @@ void setDump(Dump* dump, void* derived, char* filename, int printInc,
 Dump* createCellFieldDump(char* filename, int cellIndex,
 			  int printInc, bool overwrite);
 Dump* createFieldDump(char* filename, int printInc, bool overwrite);
+Dump* createIndexFieldDump(char* filename, int printInc, bool overwrite);
 Dump* createCMDump(char* filename, int printInc, bool overwrite);
 Dump* createBulkCMDump(char* filenmae, int printInc);
 Dump* createGyrationDump(char* filename, int printInc, bool overwrite);

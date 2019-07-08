@@ -39,22 +39,6 @@ void neighbourOutput(NeighbourDump* dump, PhaseFieldModel* model, int step) {
   }
   fclose(f);
 
-  // Output the index field
-  char tmpname[80] = "index_field.dat.tmp";
-  char name[80] = "index_field.dat";
-    /*char suffix [80];
-  sprintf(suffix, ".%d", step);
-  strcat(name, suffix);*/
-  FILE* fi = fopen(tmpname, "w");
-  for (int i = 0; i < dump->analyser->lx; i++) {
-    for (int j = 0; j < dump->analyser->ly; j++) {
-      fprintf(fi, "%d %d %d\n", i, j, dump->analyser->indexField[i][j]);
-    }
-    fprintf(fi,"\n");
-  }
-  fclose(fi);
-  rename(tmpname, name);
-  
   if (dump->overwrite) {
     rename(tmpfile, dump->super.filename);
   }

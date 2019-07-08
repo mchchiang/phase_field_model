@@ -28,7 +28,7 @@ int main (int argc, char* argv[]) {
     return 1;
   }
 
-  char line [80], dumpMode [80];
+  char line [PF_DIR_SIZE], dumpMode [PF_DIR_SIZE];
   char cmFile [PF_DIR_SIZE], shapeFile [PF_DIR_SIZE], dumpFile [PF_DIR_SIZE];
   double phi0 = -1.0;
   double M, R, kappa, alpha, mu, Dr, epsilon, dt, v;
@@ -116,6 +116,18 @@ int main (int argc, char* argv[]) {
 	ndumps++;
       }
     }
+    // Total index field dump
+    if (sscanf(line, "dump_index_field %d %d %s %s",
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
+      if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	equilDumps[nedumps] =
+	  createIndexFieldDump(dumpFile, printInc, overwrite);
+	nedumps++;
+      } else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	dumps[ndumps] = createIndexFieldDump(dumpFile, printInc, overwrite);
+	ndumps++;
+      }
+    }    
     // Individual cell field dump
     if (sscanf(line, "dump_cell_field %d %d %d %s %s",
 	       &cellIndex, &printInc, &overwrite, dumpMode, dumpFile) == 5) {

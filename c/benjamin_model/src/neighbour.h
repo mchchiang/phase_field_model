@@ -28,7 +28,8 @@ extern "C" {
   void deleteNeighbourList(NeighbourList* list);
   NeighbourList** getNeighbourList(NeighbourAnalyser* ana,
 				   PhaseFieldModel* model);
-
+  int** getIndexField(NeighbourAnalyser* ana, PhaseFieldModel* model);
+  
 #ifdef __cplusplus
 }
 #endif

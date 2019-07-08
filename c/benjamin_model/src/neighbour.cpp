@@ -35,39 +35,9 @@ extern "C" {
   
   NeighbourList** getNeighbourList(NeighbourAnalyser* ana,
 				   PhaseFieldModel* model) {
-    // Reset the fields
-    for (int i = 0; i < ana->lx; i++) {
-      for (int j = 0; j < ana->ly; j++) {
-	ana->totalField[i][j] = 0.0;
-	ana->indexField[i][j] = 0;
-      }
-    }
-    
-    // Map all individual cell fields to the total field
-    int clx, cly, cx, cy, x, y, get;
-    double phi, threshold;
-    Cell* cell;
     int ncells = model->numOfCells;
-    for (int i = 0; i < ncells; i++) {
-      cell = model->cells[i];
-      clx = cell->lx;
-      cly = cell->ly;
-      cx = cell->x;
-      cy = cell->y;
-      get = cell->getIndex;
-      threshold = cell->incell;
-      for (int j = 0; j < clx; j++) {
-	for (int k = 0; k < cly; k++) {
-	  x = iwrap(model, cx+j);
-	  y = jwrap(model, cy+k);
-	  phi = cell->field[get][j][k];
-	  if (phi > ana->totalField[x][y] && phi > threshold) {
-	    ana->totalField[x][y] = phi;
-	    ana->indexField[x][y] = i+1; // Add one and use zero for substrate
-	  }
-	}
-      }
-    }
+    
+    getIndexField(ana, model);
     
     // Find neighbours
     vector<set<int> > neighbours (ncells);
@@ -107,5 +77,58 @@ extern "C" {
     }
     
     return list;
+  }
+
+  int** getIndexField(NeighbourAnalyser* ana, PhaseFieldModel* model) {
+    int** indexField;
+    double** totalField;
+    int lx = model->lx;
+    int ly = model->ly;
+    if (ana == NULL) {
+      indexField = create2DIntArray(lx, ly);
+      totalField = create2DDoubleArray(lx, ly);
+    } else {
+      indexField = ana->indexField;
+      totalField = ana->totalField;
+      // Reset the fields
+      for (int i = 0; i < ana->lx; i++) {
+	for (int j = 0; j < ana->ly; j++) {
+	  totalField[i][j] = 0.0;
+	  indexField[i][j] = 0;
+	}
+      }
+    }
+
+    int clx, cly, cx, cy, x, y, get;
+    double phi, threshold;
+    Cell* cell;
+    int ncells = model->numOfCells;
+    for (int i = 0; i < ncells; i++) {
+      cell = model->cells[i];
+      clx = cell->lx;
+      cly = cell->ly;
+      cx = cell->x;
+      cy = cell->y;
+      get = cell->getIndex;
+      threshold = cell->incell;
+      for (int j = 0; j < clx; j++) {
+	for (int k = 0; k < cly; k++) {
+	  x = iwrap(model, cx+j);
+	  y = jwrap(model, cy+k);
+	  phi = cell->field[get][j][k];
+	  if (phi > totalField[x][y] && phi > threshold) {
+	    totalField[x][y] = phi;
+	    indexField[x][y] = i+1; // Add one and use zero for substrate
+	  }
+	}
+      }
+    }
+
+    // Clean up resources
+    if (ana == NULL) {
+      free(totalField);
+    }
+    
+    return indexField;
   }
 }
