@@ -48,9 +48,9 @@ int main (int argc, char* argv[]) {
   // Read the position data
   int nbins {static_cast<int>((endTime-startTime)/timeInc)+1};
   vector<double> vec (2, 0.0);
-  vector<vector<double> > vec2 (nbins, vec);
+  vector<vector<double> > vec2 (npoints, vec);
   vector<vector<vector<double> > >* pos 
-  {new vector<vector<vector<double > > >(npoints, vec2)};
+  {new vector<vector<vector<double > > >(nbins, vec2)};
   long time;
   int ibin;
   cout << "Reading data ..." << endl;
@@ -61,8 +61,8 @@ int main (int argc, char* argv[]) {
     } else if (time >= startTime && time <= endTime) {
       ibin = static_cast<int>((time-startTime)/timeInc);
       for (int i {}; i < npoints; i++) {
-	(*pos)[i][ibin][0] = reader.getUnwrappedPosition(i, 0);
-	(*pos)[i][ibin][1] = reader.getUnwrappedPosition(i, 1);
+	(*pos)[ibin][i][0] = reader.getUnwrappedPosition(i, 0);
+	(*pos)[ibin][i][1] = reader.getUnwrappedPosition(i, 1);
       }
     } else {
       break;
@@ -109,14 +109,14 @@ int main (int argc, char* argv[]) {
     count = vector<long>(nbins, 0);
 
 #pragma omp for schedule(dynamic,10)
-    for (k = 0; k < endShiftBin; k++) {
-      for (j = k+1; j < nbins; j++) {
-	ibin = j-k;
-	dxcm = totCM[j][0]-totCM[k][0];
-	dycm = totCM[j][1]-totCM[k][1];
-	for (i = 0; i < npoints; i++) {
-	  dx = ((*pos)[i][j][0]-(*pos)[i][k][0])-dxcm;
-	  dy = ((*pos)[i][j][1]-(*pos)[i][k][1])-dycm;
+    for (i = 0; i < endShiftBin; i++) {
+      for (j = i+1; j < nbins; j++) {
+	ibin = j-i;
+	dxcm = totCM[j][0]-totCM[i][0];
+	dycm = totCM[j][1]-totCM[i][1];
+	for (k = 0; k < npoints; k++) {
+	  dx = ((*pos)[j][k][0]-(*pos)[i][k][0])-dxcm;
+	  dy = ((*pos)[j][k][1]-(*pos)[i][k][1])-dycm;
 	  r2 = dx*dx + dy*dy;
 	  r4 = r2*r2;
 	  r2avg[ibin] += r2;
@@ -148,10 +148,11 @@ int main (int argc, char* argv[]) {
     cout << "Problem with opening output file!" << endl;
     return 1;
   }
-  writer << std::fixed << std::setprecision(10);
-
+  
   for (i = 0; i < nbins; i++) {
-    writer << (i*timeInc) << " " << totR2Avg[i] << " " << totR4Avg[i] << endl;
+    writer << (i*timeInc) << " " << std::setprecision(10) << std::fixed 
+	   << totR2Avg[i] << " " << totR4Avg[i] << endl;
+    writer.unsetf(std::ios_base::floatfield);
   }
   writer.close();
 

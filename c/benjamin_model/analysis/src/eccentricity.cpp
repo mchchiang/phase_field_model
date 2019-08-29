@@ -1,5 +1,5 @@
-// asphericity.cpp
-// A program to compute the average asphericity
+// eccentricity.cpp
+// A program to compute the average eccentricity using the gyration tensor
 
 #include <iostream>
 #include <fstream>
@@ -17,11 +17,13 @@ using std::istringstream;
 using std::string;
 using std::vector;
 
+double eccent(double gxx, double gyy, double gxy);
+
 int main(int argc, char* argv[]) {
   
   if (argc != 6) {
-    cout << "usage: asphericity npoints startTime endTime "
-	 << "shapeFile outFile" << endl;
+    cout << "usage: eccentricity npoints startTime endTime "
+	 << "gyrFile outFile" << endl;
     return 1;
   }
 
@@ -29,11 +31,11 @@ int main(int argc, char* argv[]) {
   int npoints {stoi(string(argv[++argi]), nullptr, 10)};
   long startTime {stoi(string(argv[++argi]), nullptr, 10)};
   long endTime {stoi(string(argv[++argi]), nullptr, 10)};
-  string shapeFile {argv[++argi]};
+  string gyrFile {argv[++argi]};
   string outFile {argv[++argi]};
   
   ifstream reader;
-  reader.open(shapeFile);
+  reader.open(gyrFile);
   if (!reader) {
     cout << "Problem with opening gyration file!" << endl;
     return 1;
@@ -45,15 +47,13 @@ int main(int argc, char* argv[]) {
     cout << "Problem with opening output file!" << endl;
     return 1;
   }
-  writer << std::setprecision(10) << std::fixed;
-  
+
   string line, str;
   istringstream iss;
   long time; 
-  int pixels;
-  double area, perimeter, pixelArea, chainPerimeter, asphere;
-  double asphereAvg {};
-  double asphereAvgSq {};
+  double gxx, gyy, gxy, b;
+  double eccentAvg {};
+  double eccentAvgSq {};
   double n = static_cast<double>(npoints);
   while (getline(reader, line)) {
     // Read the two header lines and get time
@@ -71,31 +71,40 @@ int main(int argc, char* argv[]) {
     } else if (time > endTime) {
       break;
     } else {
-      // Compute asphericity
-      asphereAvg = 0.0;
-      asphereAvgSq = 0.0;
+      // Compute eccentricity
+      eccentAvg = 0.0;
+      eccentAvgSq = 0.0;
       for (int i {}; i < npoints; i++) {
 	getline(reader, line);
 	iss.clear();
 	iss.str(line);
-	iss >> perimeter >> area >> chainPerimeter >> pixelArea >> pixels;
-	asphere = perimeter*perimeter/(4.0*M_PI*area);
-	asphereAvg += asphere;
-	asphereAvgSq += asphere*asphere;
+	iss >> gxx >> gyy >> gxy;
+	b = eccent(gxx, gyy, gxy);
+	eccentAvg += b;
+	eccentAvgSq += b*b;
       }
-
+      
       // Normalise
-      asphereAvg /= n;
-      asphereAvgSq /= n;
-      double stdev {n/(n-1.0)*(asphereAvgSq-asphereAvg*asphereAvg)};
+      eccentAvg /= n;
+      eccentAvgSq /= n;
+      double stdev {n/(n-1.0)*(eccentAvgSq-eccentAvg*eccentAvg)};
       double stderr {stdev/sqrt(n)};
       
-      // Output results to file
+      // Output results
       writer << time << " " << std::setprecision(10) << std::fixed 
-	     << asphereAvg << " " << stdev << " " << stderr << endl;
+	     << eccentAvg << " " << stdev << " " << stderr << endl;
       writer.unsetf(std::ios_base::floatfield);
     }
   }
   reader.close();
   writer.close();
+}
+
+double eccent(double gxx, double gyy, double gxy) {
+  double b {(gxx+gyy)/2.0};
+  double c {gxx*gyy-gxy*gxy};
+  double dis {b*b-c};
+  double lam1 {b+sqrt(dis)};
+  double lam2 {b-sqrt(dis)};
+  return (lam1-lam2)/(lam1+lam2);
 }

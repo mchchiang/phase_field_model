@@ -1,5 +1,5 @@
-// asphericity.cpp
-// A program to compute the average asphericity
+// asphere_distrb.cpp
+// A program to compute the distribution of asphericity values
 
 #include <iostream>
 #include <fstream>
@@ -19,9 +19,9 @@ using std::vector;
 
 int main(int argc, char* argv[]) {
   
-  if (argc != 6) {
-    cout << "usage: asphericity npoints startTime endTime "
-	 << "shapeFile outFile" << endl;
+  if (argc != 9) {
+    cout << "usage: asphere_distrb npoints startTime endTime "
+	 << "min max binSize shapeFile outFile" << endl;
     return 1;
   }
 
@@ -29,6 +29,9 @@ int main(int argc, char* argv[]) {
   int npoints {stoi(string(argv[++argi]), nullptr, 10)};
   long startTime {stoi(string(argv[++argi]), nullptr, 10)};
   long endTime {stoi(string(argv[++argi]), nullptr, 10)};
+  double min {stod(string(argv[++argi]), nullptr)};
+  double max {stod(string(argv[++argi]), nullptr)};
+  double binSize {stod(string(argv[++argi]), nullptr)};
   string shapeFile {argv[++argi]};
   string outFile {argv[++argi]};
   
@@ -38,23 +41,18 @@ int main(int argc, char* argv[]) {
     cout << "Problem with opening gyration file!" << endl;
     return 1;
   }
-
-  ofstream writer;
-  writer.open(outFile);
-  if (!writer) {
-    cout << "Problem with opening output file!" << endl;
-    return 1;
-  }
-  writer << std::setprecision(10) << std::fixed;
   
+  // Set up distribution
+  int nbins {static_cast<int>(ceil((max-min)/binSize))};
+  vector<double> distrb (nbins, 0.0);
+  double count {};
+
   string line, str;
   istringstream iss;
   long time; 
   int pixels;
+  int ibin;
   double area, perimeter, pixelArea, chainPerimeter, asphere;
-  double asphereAvg {};
-  double asphereAvgSq {};
-  double n = static_cast<double>(npoints);
   while (getline(reader, line)) {
     // Read the two header lines and get time
     getline(reader, line);
@@ -72,30 +70,43 @@ int main(int argc, char* argv[]) {
       break;
     } else {
       // Compute asphericity
-      asphereAvg = 0.0;
-      asphereAvgSq = 0.0;
       for (int i {}; i < npoints; i++) {
 	getline(reader, line);
 	iss.clear();
 	iss.str(line);
 	iss >> perimeter >> area >> chainPerimeter >> pixelArea >> pixels;
 	asphere = perimeter*perimeter/(4.0*M_PI*area);
-	asphereAvg += asphere;
-	asphereAvgSq += asphere*asphere;
+	ibin = static_cast<int>((asphere-min)/binSize);
+	if (ibin >= 0 && ibin < nbins) {
+	  distrb[ibin] += 1.0;
+	  count += 1.0;
+	}
       }
-
-      // Normalise
-      asphereAvg /= n;
-      asphereAvgSq /= n;
-      double stdev {n/(n-1.0)*(asphereAvgSq-asphereAvg*asphereAvg)};
-      double stderr {stdev/sqrt(n)};
-      
-      // Output results to file
-      writer << time << " " << std::setprecision(10) << std::fixed 
-	     << asphereAvg << " " << stdev << " " << stderr << endl;
-      writer.unsetf(std::ios_base::floatfield);
     }
   }
   reader.close();
+
+  // Normalise
+  for (int i {}; i < nbins; i++) {
+    distrb[i] /= count;
+  }
+  
+  ofstream writer;
+  writer.open(outFile);
+  if (!writer) {
+    cout << "Problem with opening output file!" << endl;
+    return 1;
+  }
+  writer << std::setprecision(5) << std::fixed;
+  
+  // Output results to file
+  double left, centre, right;
+  for (int i {}; i < nbins; i++) {
+    left = i*binSize+min;
+    right = (i+1)*binSize+min;
+    centre = (left+right)/2.0;
+    writer << left << " " << centre << " " << right << " "
+	   << distrb[i] << endl;	       
+  }
   writer.close();
 }
