@@ -20,6 +20,7 @@ d_old=$d
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
 N=36 #100
+run=1
 
 eccent_tstart=0
 eccent_tend=20000000
@@ -27,7 +28,7 @@ tstart=10000000
 tend=20000000
 tinc=1000
 
-eccent_avg_file="${out_dir}/eccent_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}.dat"
+eccent_avg_file="${out_dir}/eccent_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}_run_${run}.dat"
 > $eccent_avg_file
 
 while (( $(bc <<< "$d < $d_end") ))
@@ -36,7 +37,7 @@ do
     pe=$(python -c "print '%.3f' % ($pe_start)")
     while (( $(bc <<< "$pe < $pe_end") ))
     do
-	name="cell_N_${N}_d_${d}_Pe_${pe}_run_1"
+	name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 	eccent_file="${in_path}/eccent_${name}.dat"
 #	eccent_file="${in_path}/eccent_${name}_t_${eccent_tstart}-${eccent_tend}.dat"
 	if [ -f $eccent_file ]; then

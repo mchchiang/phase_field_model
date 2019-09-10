@@ -52,13 +52,15 @@ do
 	    do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 		pos_file="${in_path}/position/pos_${name}.dat"
-		pos_bulk_file="${in_path}/position/pos-bulk_${name}.dat"
-		params_file="${in_path}/siminfo/params_${name}.txt"
-		lx=$(grep 'lx = ' $params_file | awk '{print $3}')
-		ly=$(grep 'ly = ' $params_file | awk '{print $3}')
-		msd_file="${out_path}/msd-tavg_${name}.dat"
-		cmd[$jobid]="$msd_exe $N $lx $ly $tstart $tend $tinc $tshiftend $pos_file $pos_bulk_file $msd_file"
-		jobid=$(bc <<< "$jobid + 1")
+		if [ -f $pos_file ]; then 
+		    pos_bulk_file="${in_path}/position/pos-bulk_${name}.dat"
+		    params_file="${in_path}/siminfo/params_${name}.txt"
+		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
+		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
+		    msd_file="${out_path}/msd-tavg_${name}.dat"
+		    cmd[$jobid]="$msd_exe $N $lx $ly $tstart $tend $tinc $tshiftend $pos_file $pos_bulk_file $msd_file"
+		    jobid=$(bc <<< "$jobid + 1")
+		fi
 	    done
 	    pe=$(python -c "print '%.3f' % ($pe + $pe_inc)")
 	done

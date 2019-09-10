@@ -19,7 +19,8 @@ d=$(python -c "print '%.3f' % ($d_start)")
 d_old=$d
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=36 #100
+N=100 #100
+run=2
 
 asphere_tstart=0
 asphere_tend=20000000
@@ -27,7 +28,7 @@ tstart=10000000
 tend=20000000
 tinc=1000
 
-asphere_avg_file="${out_dir}/asphere_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}.dat"
+asphere_avg_file="${out_dir}/asphere_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}_run_${run}.dat"
 > $asphere_avg_file
 
 while (( $(bc <<< "$d < $d_end") ))
@@ -36,7 +37,7 @@ do
     pe=$(python -c "print '%.3f' % ($pe_start)")
     while (( $(bc <<< "$pe < $pe_end") ))
     do
-	name="cell_N_${N}_d_${d}_Pe_${pe}_run_1"
+	name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 	asphere_file="${in_path}/asphere_${name}.dat"
 #	asphere_file="${in_path}/asphere_${name}_t_${asphere_tstart}-${asphere_tend}.dat"
 	if [ -f $asphere_file ]; then

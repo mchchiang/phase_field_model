@@ -49,10 +49,11 @@ do
 	    do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 		shape_file="${in_path}/shape/shape_${name}.dat"
-		asphere_file="${out_path}/asphere/asphere_${name}.dat"
-#		asphere_file="${out_path}/asphere/asphere_${name}_t_${tstart}-${tend}.dat"
-		cmd[$jobid]="$asphere_exe $N $tstart $tend $shape_file $asphere_file"
-		jobid=$(bc <<< "$jobid + 1")
+		if [ -f $shape_file ]; then
+		    asphere_file="${out_path}/asphere/asphere_${name}.dat"
+		    cmd[$jobid]="$asphere_exe $N $tstart $tend $shape_file $asphere_file"
+		    jobid=$(bc <<< "$jobid + 1")
+		fi
 	    done
 	    pe=$(python -c "print '%.3f' % ($pe + $pe_inc)")
 	done

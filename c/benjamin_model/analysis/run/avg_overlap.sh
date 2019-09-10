@@ -19,7 +19,7 @@ d=$(python -c "print '%.3f' % ($d_start)")
 d_old=$d
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=100 #100
+N=36 #100
 run=1
 
 overlap_tstart=0
