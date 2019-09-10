@@ -1,30 +1,51 @@
 # multi_gauss_fit.R
 # An R script to perform multi-modal Gaussian fits
 
-# Get the arguments
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 3) {
-   cat("usage: filename value_col ncomps\n")
-   quit()
-}
-
-filename <- args[1]
-value_col <- as.integer(args[2])
-ncomps <- as.integer(args[3])
-
 # Plot histogram or not
-plot_hist = FALSE
+#plot_hist = TRUE # FALSE
 
-# Load the package
+# Load the required packages
 if ("mixtools" %in% rownames(installed.packages()) == FALSE) {
    cat("Missing required package 'mixtools'!\n")
    quit()
 }
 suppressMessages(require(mixtools))
+if ("rootSolve" %in% rownames(installed.packages()) == FALSE) {
+  cat("Missing required package 'rootSolve'!\n")
+  quit()
+}
+suppressMessages(require(rootSolve))
 
-# Load the data file
-data <- read.csv(filename, sep=' ')
-x <- data[[value_col]]
+# Get the arguments
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 5) {
+   cat("usage: time_col value_col tstart tend filename\n")
+   quit()
+}
+
+time_col <- as.integer(args[1])
+value_col <- as.integer(args[2])
+tstart <- as.integer(args[3])
+tend <- as.integer(args[4])
+ncomps <- 2 # Only do bi-modal Gaussian fit (to classify modality easily)
+
+# Load the data files
+istart <- 5
+x <- NULL
+for (i in istart:length(args)) {
+  filename <- args[i]
+  data <- read.csv(filename, sep=' ', header=FALSE)
+
+  # Filter the data for the specific time frames
+  data <- data[(data[,time_col] >= tstart) & (data[,time_col] <= tend),]
+  
+  # Select the value column only
+  if (i == istart) {
+    x <- data[[value_col]]    
+  } else {
+    x <- c(x,data[[value_col]])
+  }
+}
 
 # Do multi-modal Gaussian fitting
 fit <- normalmixEM(x, k=ncomps, lambda=1.0/ncomps)
@@ -47,11 +68,6 @@ m0 <- (2*(s^4-s^2+1)^(1.5)-(2*s^6-3*s^4-3*s^2+2))^(0.5)/s
 if (m <= m0) {
   cat("modality: unimodal\n")
 } else {
-  if ("rootSolve" %in% rownames(installed.packages()) == FALSE) {
-    cat("Missing required package 'rootSolve'!\n")
-    quit()
-  }
-  suppressMessages(require(rootSolve))
 
   a <- (s^2-1)
   b <- -m*(s^2-2)
@@ -74,13 +90,13 @@ if (m <= m0) {
 }
 
 # Plot the histogram and the estimated guassian mixtures
-if (plot_hist) {
+#if (plot_hist) {
   suppressMessages(require(tcltk))
   X11()
-  hist(x, freq = FALSE)
-  xx <- seq(1.0,1.025,0.0001)
+  h <- hist(x, freq = FALSE)
+  xx <- seq(1.0,max(x),0.0001)
   lines(xx, weights[1]*dnorm(xx, mean=means[1], sd=stdevs[1]), type='l')
   lines(xx, weights[2]*dnorm(xx, mean=means[2], sd=stdevs[2]), type='l')
-  prompt <- "hit spacebar to clsoe plots"
+  prompt <- "hit spacebar to close plots"
   capture <- tk_messageBox(message=prompt)
-}
+#}
