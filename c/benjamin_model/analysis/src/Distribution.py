@@ -52,13 +52,13 @@ for val in samples:
     distrb[bin_index] += 1.0
     count += 1
 
-# Normalise distribution
-distrb = map(lambda x : x / float(count) if count != 0 else 0.0 , distrb)
+# Normalise distribution (to get probability density)
+distrb = map(lambda x : x/float(count)/bin_size if count != 0 else 0.0 , distrb)
 
 # Compute cumulative distribution
 count = 0.0
 for i,v in enumerate(distrb):
-    count += v
+    count += (v*bin_size)
     cdf[i] = count
 
 # Output distribution
