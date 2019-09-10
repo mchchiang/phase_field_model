@@ -61,7 +61,9 @@ error = 0.0
 
 if (n > 1):
     var = n / (n-1) * (avgSq - avg*avg)
-    sigma = math.sqrt(var) 
+    if (var < 0.0):
+        print "Negative variance: var = %.5f" % var
+    sigma = math.sqrt(abs(var)) 
     error = sigma / math.sqrt(n)
 
 writer = open(output_file, "w")
