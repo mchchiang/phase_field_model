@@ -1,9 +1,6 @@
 # multi_gauss_fit.R
 # An R script to perform multi-modal Gaussian fits
 
-# Plot histogram or not
-#plot_hist = TRUE # FALSE
-
 # Load the required packages
 if ("mixtools" %in% rownames(installed.packages()) == FALSE) {
    cat("Missing required package 'mixtools'!\n")
@@ -18,8 +15,8 @@ suppressMessages(require(rootSolve))
 
 # Get the arguments
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 5) {
-   cat("usage: time_col value_col tstart tend filename\n")
+if (length(args) < 9) {
+   cat("usage: time_col value_col tstart tend val_min val_max bin_size plot_hist filename\n")
    quit()
 }
 
@@ -27,10 +24,15 @@ time_col <- as.integer(args[1])
 value_col <- as.integer(args[2])
 tstart <- as.integer(args[3])
 tend <- as.integer(args[4])
+val_min <- as.double(args[5])
+val_max <- as.double(args[6])
+bin_size <- as.double(args[7])
+plot_hist <- as.integer(args[8])
+
 ncomps <- 2 # Only do bi-modal Gaussian fit (to classify modality easily)
 
 # Load the data files
-istart <- 5
+istart <- 9
 x <- NULL
 for (i in istart:length(args)) {
   filename <- args[i]
@@ -46,6 +48,8 @@ for (i in istart:length(args)) {
     x <- c(x,data[[value_col]])
   }
 }
+
+cat("Done loading data\n")
 
 # Do multi-modal Gaussian fitting
 fit <- normalmixEM(x, k=ncomps, lambda=1.0/ncomps)
@@ -90,13 +94,13 @@ if (m <= m0) {
 }
 
 # Plot the histogram and the estimated guassian mixtures
-#if (plot_hist) {
+if (plot_hist) {
   suppressMessages(require(tcltk))
   X11()
   h <- hist(x, freq = FALSE)
-  xx <- seq(1.0,max(x),0.0001)
+  xx <- seq(val_min,val_max,bin_size)
   lines(xx, weights[1]*dnorm(xx, mean=means[1], sd=stdevs[1]), type='l')
   lines(xx, weights[2]*dnorm(xx, mean=means[2], sd=stdevs[2]), type='l')
   prompt <- "hit spacebar to close plots"
   capture <- tk_messageBox(message=prompt)
-#}
+}
