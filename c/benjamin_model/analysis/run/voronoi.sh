@@ -8,13 +8,17 @@ pe_inc=$6
 run_start=$7
 run_end=$8
 run_inc=$9
-in_dir=${10}
-out_dir=${11}
+obs=${10} # asphere, eccent, hexatic, neigh
+in_dir=${11}
+out_dir=${12}
 
-if [ "$#" != 11 ]; then
-    echo "usage: voronoi.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
+if [ "$#" != 12 ]; then
+    echo "usage: voronoi.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc obs in_dir out_dir"
     exit 1
 fi
+
+# Load the functions for calculating the observables
+. ./observables.sh --source-only
 
 if [ ! -d $outdir ]; then
     mkdir -p $outdir
@@ -28,7 +32,6 @@ vor_py="../src/voronoi.py"
 N=100 #100
 dt=0.5
 Dr=0.0001
-obs="hexatic"
 tstart=0 # 0
 tend=21000000 # 21000000
 tinc=10000 # 10000
@@ -38,81 +41,10 @@ make_movie=1
 print_to_screen=0
 
 # Parallel run options
-max_jobs=8
+max_jobs=3
 cmd=()
 jobid=0
-
-# Functions to calculate observables
-data_col=0
-data_min=0.0
-data_max=0.0
-data_file=""
-remove_file=0 # Remove data file or not after computation
-
-get_asphere() {
-    echo "Calculating asphere values ..."
-    name=$1
-    in_path=$2
-    out_path=$3
-    data_col=0
-    data_min=0.999
-    data_max=1.05
-    remove_file=1
-    shape_file="${in_path}/shape/shape_${name}.dat"
-    data_file="${out_path}/asphere-cell_${name}.dat"
-    > $data_file # Clear the file
-    PI=$(python -c "import math; print '{:.10f}'.format(math.pi)")
-    nlines=$(python -c "print $N+2")
-    awk -v n=$nlines -v pi=$PI '{
-i=(NR-1)%n;
-if(i>=2){
-as = $1*$1/(4.0*pi*$2);
-printf("%.10f\n", as);
-} else {print}
-}' $shape_file > $data_file
-}
-
-get_eccent() {
-    echo "Calculating eccent values ..."
-    name=$1
-    in_path=$2
-    out_path=$3
-    data_col=0
-    data_min=0.0
-    data_max=0.5
-    remove_file=1
-    gyr_file="${in_path}/gyration/gyr_${name}.dat"
-    data_file="${out_path}/eccent-cell_${name}.dat"
-    > $data_file # Clear the file
-    nlines=$(python -c "print $N+2")
-    awk -v n=$nlines '{
-i=(NR-1)%n;
-if(i>=2){
-gxx = $1
-gyy = $2
-gxy = $3
-b = (gxx+gyy)/2.0
-c = (gxx*gyy-gxy*gxy);
-dis = b*b-c
-lam1 = b+sqrt(dis)
-lam2 = b-sqrt(dis)
-ec = (lam1-lam2)/(lam1+lam2)
-printf("%.10f\n", ec);
-} else {print}
-}' $gyr_file > $data_file 
-}
-
-get_hexatic() {
-    echo "Calculating hexatic values ..."
-    name=$1
-    in_path=$2
-    out_path=$3
-    data_col=2
-    data_min=-1.0
-    data_max=1.0
-    remove_file=0
-    data_file="${in_path}/hexatic/hex_${name}.dat"
-}
+job_lot=0
 
 while (( $(bc <<< "$d < $d_end") ))
 do
@@ -131,12 +63,24 @@ do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 		pos_file="${in_path}/position/pos_${name}.dat"
 		if [ -f $pos_file ]; then
+		    # Set observable parameters
+		    args=""
 		    if [[ "$obs" == "asphere" ]]; then
-			get_asphere $name $in_path $out_path
+			set_asphere_params $name $in_path $out_path
+			cmd[$jobid]="get_asphere $args"
+			jobid=$(bc <<< "$jobid + 1")
 		    elif [[ "$obs" == "eccent" ]]; then
-			get_eccent $name $in_path $out_path
+			set_eccent_params $name $in_path $out_path
+			cmd[$jobid]="get_eccent $args"
+			jobid=$(bc <<< "$jobid + 1")
 		    elif [[ "$obs" == "hexatic" ]]; then
-			get_hexatic $name $in_path $out_path
+			set_hexatic_params $name $in_path $out_path
+			cmd[$jobid]="get_hexatic $args"
+			jobid=$(bc <<< "$jobid + 1")
+		    elif [[ "$obs" == "neigh" ]]; then
+			set_neigh_params $name $in_path $out_path
+			cmd[$jobid]="get_neigh $args"
+			jobid=$(bc <<< "$jobid + 1")			
 		    else
 			continue
 		    fi
@@ -148,12 +92,17 @@ do
 		    else
 			out_file="${out_path}/vor-${obs}_${name}_t_${tstart}.pdf"
 		    fi
-		    echo "Making voronoi diagrams ... "
-		    cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
 		    if [[ $remove_file == 1 ]]; then 
-			rm $data_file
+			job_lot=3
+			cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
+			jobid=$(bc <<< "$jobid + 1")
+			cmd[$jobid]="rm $data_file"
+			jobid=$(bc <<< "$jobid + 1")
+		    else
+			job_lot=2
+			cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
+			jobid=$(bc <<< "$jobid + 1")
 		    fi
-		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done
 	    pe=$(python -c "print '%.3f' % ($pe + $pe_inc)")
@@ -166,15 +115,22 @@ done
 # Parallel runs
 
 total_jobs=$jobid
-jobid=0
 
-while (( $(bc <<< "$jobid < $total_jobs") ))
+k=0
+for (( j=0; j<$job_lot; j++ ))
 do
-    for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++))
+    jobid=$j
+    k=0
+    while (( $(bc <<< "$jobid < $total_jobs") ))
     do
-	echo "${cmd[jobid]} &"
-	${cmd[jobid]} &
-	jobid=$(bc <<< "$jobid + 1")
+	for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++ ))
+	do
+	    jobid=$(bc <<< "$k * $job_lot + $j")
+	    echo "${cmd[jobid]} &"
+	    ${cmd[jobid]} &
+	    k=$(bc <<< "$k + 1")
+	    jobid=$(bc <<< "$jobid + 1")
+	done
+	wait
     done
-    wait
 done

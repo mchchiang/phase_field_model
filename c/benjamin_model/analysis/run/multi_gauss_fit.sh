@@ -10,11 +10,13 @@ tend=$8 #21000000
 tinc=$9 #1000
 run=${10} #1
 obs=${11}  #"asphere"
-in_dir=${12}
-out_dir=${13}
+time_col=${12}
+val_col=${13}
+in_dir=${14}
+out_dir=${15}
 
-if [ "$#" != 13 ]; then
-    echo "usage: multi_gauss_fit.sh d_start d_end d_inc pe_start pe_end pe_inc tstart tend tinc run obs in_dir out_dir"
+if [ "$#" != 15 ]; then
+    echo "usage: multi_gauss_fit.sh d_start d_end d_inc pe_start pe_end pe_inc tstart tend tinc run obs time_col val_col in_dir out_dir"
     exit 1
 fi
 
@@ -29,9 +31,17 @@ guass_R="../src/multi_gauss_fit.R"
 
 N=100 # 100
 
-#overall_gauss_file="${out_dir}/${obs}-modality_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}_run_${run}.dat"
-overall_gauss_file="${out_dir}/${obs}-modality_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}.dat"
-> $overall_gauss_file
+val_min=-1.0
+val_max=1.0
+bin_size=0.01
+plot_hist=1
+ncomp=2 # Number of modes (number of Gaussians)
+
+if (( "${plot_hist}" != 1 )); then
+    overall_gauss_file="${out_dir}/${obs}-modality_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}_run_${run}.dat"
+#    overall_gauss_file="${out_dir}/${obs}-modality_cell_N_${N}_d_${d_start}-${d_end}_Pe_${pe_start}-${pe_end}_t_${tstart}-${tend}.dat"
+    > $overall_gauss_file
+fi
 
 while (( $(bc <<< "$d < $d_end") ))
 do
@@ -44,32 +54,32 @@ do
 	pe=$(python -c "print '%.3f' % ($pe_start)")
 	while (( $(bc <<< "$pe < $pe_end") ))
 	do
-#	    name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
-	    name="cell_N_${N}_d_${d}_Pe_${pe}"
-#	    asphere_file="${in_path}/${obs}/${obs}_${name}.dat"
-	    asphere_file=${in_path}/${obs}/${obs}_${name}_run_*.dat
-	    asphere_file_1=${in_path}/${obs}/${obs}_${name}_run_1.dat
-	    if [ -f $asphere_file_1 ]; then
+	    name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
+#	    name="cell_N_${N}_d_${d}_Pe_${pe}"
+	    obs_file="${in_path}/${obs}/${obs}_${name}.dat"
+#	    obs_file=${in_path}/${obs}/${obs}_${name}_run_*.dat
+#	    obs_file_1=${in_path}/${obs}/${obs}_${name}_run_1.dat  
+	    if [ -f $obs_file ]; then
+#	    if [ -f $obs_file_1 ]; then
 		echo "d = $d Pe = $pe run = $run"
-		gauss_file="${out_path}/${obs}-distrb-gauss-fit_${name}_t_${tstart}-${tend}.dat"
-		time_col=1
-		val_col=2
-		ncomp=2 # Number of modes (number of Gaussians)
-		Rscript "../src/multi_gauss_fit.R" $time_col $val_col $tstart $tend $asphere_file > $gauss_file
-		means=$(grep "mean:" $gauss_file | awk '{print $2,$3}')
-		stdevs=$(grep "stdev:" $gauss_file | awk '{print $2,$3}')
-		weights=$(grep "weight:" $gauss_file | awk '{print $2,$3}')
-		modality=$(grep "modality:" $gauss_file | awk '{if ($2=="unimodal"){$2=0} else {$2=1}; print $2}')
-#		echo "mean: $means"
-#		echo "stdev: $stdevs"
-#		echo "weight: $weights"
-#		echo "modality: $modality"
-		echo "$d $pe $means $stdevs $weights $modality" >> $overall_gauss_file
-		rm $gauss_file
+		if [[ "${plot_hist}" == 0 ]]; then
+		    gauss_file="${out_path}/${obs}-distrb-gauss-fit_${name}_t_${tstart}-${tend}.dat"
+		    Rscript "../src/multi_gauss_fit.R" $time_col $val_col $tstart $tend $val_min $val_max $bin_size $plot_hist $obs_file > $gauss_file
+		    means=$(grep "mean:" $gauss_file | awk '{print $2,$3}')
+		    stdevs=$(grep "stdev:" $gauss_file | awk '{print $2,$3}')
+		    weights=$(grep "weight:" $gauss_file | awk '{print $2,$3}')
+		    modality=$(grep "modality:" $gauss_file | awk '{if ($2=="unimodal"){$2=0} else {$2=1}; print $2}')
+		    echo "$d $pe $means $stdevs $weights $modality" >> $overall_gauss_file
+		    rm $gauss_file
+		else
+		    Rscript "../src/multi_gauss_fit.R" $time_col $val_col $tstart $tend $val_min $val_max $bin_size $plot_hist $obs_file
+		fi
 	    fi
 	    pe=$(python -c "print '%.3f' % ($pe + $pe_inc)")
 	done
-	echo "" >> $overall_gauss_file
+	if (( "${plot_hist}" == 0 )); then
+	    echo "" >> $overall_gauss_file
+	fi
     fi
     d=$(python -c "print '%.3f' % ($d + $d_inc)")
 done
