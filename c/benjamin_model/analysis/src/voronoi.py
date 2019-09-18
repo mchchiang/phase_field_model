@@ -16,8 +16,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
 args = sys.argv
-if (len(args) != 17):
-    print "usage: voronoi.py npoints lx ly Dr dt data_col data_min data_max tstart tend tinc make_movie print_to_screen pos_file data_file out_file"
+if (len(args) != 20):
+    print "usage: voronoi.py npoints lx ly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen pos_file data_file out_file"
     sys.exit(1)
 
 npoints = int(args.pop(1))
@@ -28,6 +28,9 @@ dt = float(args.pop(1))
 data_col = int(args.pop(1))
 data_min = float(args.pop(1))
 data_max = float(args.pop(1))
+tic_start = float(args.pop(1))
+tic_end = float(args.pop(1))
+tic_inc = float(args.pop(1))
 tstart = int(args.pop(1))
 tend = int(args.pop(1))
 tinc = int(args.pop(1))
@@ -95,11 +98,12 @@ data_reader.close()
 # Plot settings
 norm = mpl.colors.Normalize(vmin=data_min, vmax=data_max, clip=True)
 mapper = cm.ScalarMappable(norm=norm, cmap=cm.RdYlBu_r)
-mapper.set_array(np.array([data_min, data_max]))
+mapper.set_array([])
 fig, ax = plt.subplots()
 ax.set_xlim([0,lx])
 ax.set_ylim([0,ly])
-ax.axis("off")
+cbar = plt.colorbar(mapper)
+cbar.set_ticks(np.arange(tic_min, tic_max+ctic_inc/2.0, tic_inc))
 
 if (not make_movie):
 # Use Latex typesetting when not making movies
@@ -111,14 +115,23 @@ if (not make_movie):
         r'\sansmath']
     plt.rc("text", usetex=True)
 
+# Draw borders but no axes and ticks
+plt.tick_params(axis="both", which="both", bottom=False, top=False, 
+                labelbottom=False, right=False, left=False, labelleft=False)
+
+# Set plot margins
 plt.subplots_adjust(left=0.05,right=1.0,top=0.95,bottom=0.05)
+
+# Get the artist for plotting centre of Voronoi cells
 plt_pts, = ax.plot([],[], '.', markersize=5, color="black") # Empty data
-plt_time_txt = ax.text(0.45,0.01,"",fontsize=14,horizontalalignment="center",
+
+# Get the artist for plotting the time label
+plt_time_txt = ax.text(0.45,0.005,"",fontsize=14,horizontalalignment="center",
                        transform=plt.gcf().transFigure)
 
+# Get the artist for plotting the polygons
 patches = PatchCollection([], linewidth=1.0)
 plt_polygons = ax.add_collection(patches)
-fig.colorbar(mapper, ax=ax)
 
 def plot_data(frame):
     global pos, data_map, time_map
@@ -141,7 +154,10 @@ def plot_data(frame):
     plt_polygons.set_paths(polygons)
     plt_polygons.set_facecolor(colors)
     plt_polygons.set_edgecolor("black")
+
+    # Plot the time label
     plt_time_txt.set_text(r"$D_rt = {:.1f}$".format(time_map[frame]*Dr*dt))
+    
     return plt_pts, plt_polygons,
 
 if (make_movie):
@@ -160,4 +176,4 @@ else:
     if (print_to_screen):
         plt.show()
     else:
-        plt.savefig(out_file)
+        plt.savefig(out_file, transparent=True)
