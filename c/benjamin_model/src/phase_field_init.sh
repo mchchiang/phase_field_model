@@ -29,9 +29,9 @@ function get_rand(){
 #}
 
 # Set the model parameters
-ncells=100
-ncell_x=10
-ncell_y=10
+ncells=100 # 100
+ncell_x=10 # 10
+ncell_y=10 # 10
 confine_radius=8.0
 init_radius=7.0
 ideal_radius=12.0
@@ -43,13 +43,18 @@ epsilon=0.1
 rotate_diff=0.0001
 relax_rate=0.1
 
-nsteps=20000000 # 20000000
+nsteps=21000000 # 20000000 # Add another 10^6 steps for equilibration
 nequil=10000 # 10000
 delta_t=0.5 # 0.5
 dump_cm_freq=1000 # 1000
 dump_bulk_cm_freq=1000 # 1000
 dump_gyr_freq=1000 # 1000
-dump_field_freq=100000 # 100000
+dump_field_freq=10000 # 100000
+dump_cell_field_freq=10000 # 100000
+dump_index_field_freq=10000 # 100000
+dump_shape_freq=1000 # 1000
+dump_neighbour_freq=1000 # 1000
+dump_overlap_freq=1000 # 1000
 equildump_cm_freq=1000 # 1000
 equildump_gyr_freq=10000 # 10000
 equildump_field_freq=10000 # 10000
@@ -87,7 +92,12 @@ params_file="params_${sim_name}.txt"
 dump_cm_file="pos_${sim_name}.dat"
 dump_gyr_file="gyr_${sim_name}.dat"
 dump_field_file="field_${sim_name}.dat"
+dump_cell_field_file="cell-field_${sim_name}"
+dump_index_field_file="index-field_${sim_name}.dat"
 dump_bulk_cm_file="pos-bulk_${sim_name}.dat"
+dump_shape_file="shape_${sim_name}.dat"
+dump_neighbour_file="neigh_${sim_name}.dat"
+dump_overlap_file="olap_${sim_name}.dat"
 
 # Copy the template file
 params_file=${run_dir}/$params_file
@@ -133,4 +143,13 @@ add_dump "dump_field $equildump_field_freq 0 equil" $equildump_field_file
 add_dump "dump_cm $dump_cm_freq 0 main" $dump_cm_file
 add_dump "dump_gyr $dump_gyr_freq 0 main" $dump_gyr_file
 add_dump "dump_field $dump_field_freq 0 main" $dump_field_file
+add_dump "dump_index_field $dump_index_field_freq 0 main" $dump_index_field_file
 add_dump "dump_bulk_cm $dump_bulk_cm_freq main" $dump_bulk_cm_file
+add_dump "dump_shape 4 25 4.0 5 31 $dump_shape_freq 0 main" $dump_shape_file
+add_dump "dump_neighbour $dump_neighbour_freq 0 main" $dump_neighbour_file
+add_dump "dump_overlap $dump_overlap_freq 0 main" $dump_overlap_file
+
+for (( i=0; $i<$ncells; i++ ))
+do
+    add_dump "dump_cell_field $i $dump_cell_field_freq 0 main" "${dump_cell_field_file}_cell_${i}.dat"
+done
