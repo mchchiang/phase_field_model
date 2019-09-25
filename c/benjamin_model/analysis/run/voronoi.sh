@@ -94,13 +94,13 @@ do
 		    fi
 		    if [[ $remove_file == 1 ]]; then 
 			job_lot=3
-			cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
+			cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tic_start $tic_end $tic_inc $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
 			jobid=$(bc <<< "$jobid + 1")
 			cmd[$jobid]="rm $data_file"
 			jobid=$(bc <<< "$jobid + 1")
 		    else
 			job_lot=2
-			cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
+			cmd[$jobid]="python $vor_py $N $lx $ly $Dr $dt $data_col $data_min $data_max $tic_start $tic_end $tic_inc $tstart $tend $tinc $make_movie $print_to_screen $pos_file $data_file $out_file"
 			jobid=$(bc <<< "$jobid + 1")
 		    fi
 		fi

@@ -10,6 +10,9 @@ set_asphere_params() {
     data_col=0
     data_min=0.999
     data_max=1.05
+    tic_start=1.0
+    tic_end=1.05
+    tic_inc=0.01
     remove_file=1
     args="$shape_file $data_file"
 }
@@ -24,6 +27,9 @@ set_eccent_params() {
     data_col=0
     data_min=0.0
     data_max=0.5
+    tic_start=0.0
+    tic_end=0.5
+    tic_inc=0.1
     remove_file=1
     args="$gyr_file $data_file"
 }
@@ -36,6 +42,9 @@ set_hexatic_params() {
     data_col=2
     data_min=-1.0
     data_max=1.0
+    tic_start=-1.0
+    tic_end=1.0
+    tic_inc=0.5
     remove_file=0
     args="$data_file"
 }
@@ -49,7 +58,10 @@ set_neigh_params() {
     data_col=0
     data_min=4
     data_max=8
-    remove_file=0
+    tic_start=4
+    tic_end=8
+    tic_inc=1
+    remove_file=1
     args="$neigh_file $data_file"
 }
 
