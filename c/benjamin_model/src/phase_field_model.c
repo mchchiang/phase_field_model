@@ -11,6 +11,9 @@
 #include "dump.h"
 #include "constant.h"
 
+// Helper functions
+int sgni(int val);
+
 PhaseFieldModel* createModel(int lx, int ly, int ncells) {
   PhaseFieldModel* model =  malloc(sizeof *model);
   model->lx = lx;
@@ -287,6 +290,24 @@ inline int jdown(PhaseFieldModel* model, int j) {
   return (j-1 < 0) ? model->ly-1 : j-1;
 }
 
+int idiff(PhaseFieldModel* model, int i1, int i2) {
+  double di1 = i1-i2;
+  double di2 = -sgni(di1)*(model->lx-abs(di1));
+  if (abs(di1) < abs(di2)) {
+    return di1;
+  }
+  return di2;
+}
+
+int jdiff(PhaseFieldModel* model, int j1, int j2) {
+  double dj1 = j1-j2;
+  double dj2 = -sgni(dj1)*(model->ly-abs(dj1));
+  if (abs(dj1) < abs(dj2)) {
+    return dj1;
+  }
+  return dj2;
+}
+
 int icellwrap(PhaseFieldModel* model, int i) {
   int remainder = i % model->cellLx;
   if (remainder >= 0) {
@@ -349,4 +370,8 @@ inline double upwind(PhaseFieldModel* model, int i, int j, int uu, int u,
 	 3.0 * field[i][j] - 2.0 * field[i][d]) / 6.0;
   default: return 0.0;
   }
+}
+
+int sgni(int val) {
+  return (0 < val) - (val < 0);
 }

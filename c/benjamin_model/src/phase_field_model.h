@@ -54,6 +54,8 @@ int iup(PhaseFieldModel* model, int i);
 int idown(PhaseFieldModel* model, int i);
 int jup(PhaseFieldModel* model, int j);
 int jdown(PhaseFieldModel* model, int j);
+int idiff(PhaseFieldModel* model, int i1, int i2);
+int jdiff(PhaseFieldModel* model, int j1, int j2);
 int icellwrap(PhaseFieldModel* model, int i);
 int jcellwrap(PhaseFieldModel* model, int j);
 int icellup(PhaseFieldModel* model, int i);

@@ -19,7 +19,7 @@ PRG_SUFFIX =
 ODIR := ../bin/obj/
 EDIR := ../bin/exe/
 
-SRC_C := cell.c phase_field_model.c array.c image.c shape.c dump.c dump_cm.c dump_bulk_cm.c dump_field.c dump_cell_field.c dump_gyration.c dump_neighbour.c dump_shape.c random_mtwister.c
+SRC_C := cell.c phase_field_model.c array.c image.c overlap.c shape.c dump.c dump_cm.c dump_bulk_cm.c dump_field.c dump_cell_field.c dump_gyration.c dump_neighbour.c dump_overlap.c dump_overlap_field.c dump_shape.c dump_index_field.c random_mtwister.c
 OBJ_C := $(patsubst %.c, $(ODIR)/%.o, $(SRC_C))
 SRC_CXX := filter.cpp sgolay_filter.cpp neighbour.cpp
 OBJ_CXX := $(patsubst %.cpp, $(ODIR)/%.o, $(SRC_CXX))

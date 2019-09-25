@@ -41,7 +41,7 @@ int main (int argc, char* argv[]) {
   int nparams = 0;
   int ndumps = 0;
   int nedumps = 0;
-  int maxDumps = 50;
+  int maxDumps = 1000;
   int printInc, overwrite, cellIndex;
   int fieldScale, kernelLength, sgolayDegree, sgolayLength;
   double kernelSigma;
@@ -154,6 +154,42 @@ int main (int argc, char* argv[]) {
 	} else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
 	  dumps[ndumps] =
 	    createNeighbourDump(dumpFile, lx, ly, printInc, overwrite);
+	  ndumps++;
+	}
+      }
+    }
+    // Overlap dump
+    if (sscanf(line, "dump_overlap %d %d %s %s",
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
+      // Only created the dump when the field size is known,
+      // as it is needed for creating the overlap analysers
+      if (cellLx > 0 && cellLy > 0) {
+	if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	  equilDumps[nedumps] =
+	    createOverlapDump(dumpFile, cellLx, cellLy, printInc, overwrite);
+	  nedumps++;
+	} else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	  dumps[ndumps] =
+	    createOverlapDump(dumpFile, cellLx, cellLy, printInc, overwrite);
+	  ndumps++;
+	}
+      }
+    }
+    // Overlap field dump
+    if (sscanf(line, "dump_overlap_field %d %d %d %s %s",
+	       &cellIndex, &printInc, &overwrite, dumpMode, dumpFile) == 5) {
+      // Only created the dump when the field size is known,
+      // as it is needed for creating the overlap analysers
+      if (cellLx > 0 && cellLy > 0) {
+	if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	  equilDumps[nedumps] = 
+	    createOverlapFieldDump(dumpFile, cellLx, cellLy, cellIndex,
+				   printInc, overwrite);
+	  nedumps++;
+	} else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	  dumps[ndumps] =
+	    createOverlapFieldDump(dumpFile, cellLx, cellLy, cellIndex,
+				   printInc, overwrite);
 	  ndumps++;
 	}
       }
