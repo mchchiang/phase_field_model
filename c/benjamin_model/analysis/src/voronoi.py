@@ -53,7 +53,7 @@ data_map = [{} for i in xrange(nframes)]
 time_map = [i*tinc+tstart for i in xrange(nframes)]
 
 def add_point(frame, x, y, val):
-    global pos, data_map
+    global pos, data_map, lx, ly, xbuff, ybuff
     if (x < lx+xbuff and x > -xbuff and y < ly+ybuff and y > -ybuff):
         pos[frame].append((x,y))
         data_map[frame][(x,y)] = val
@@ -103,7 +103,7 @@ fig, ax = plt.subplots()
 ax.set_xlim([0,lx])
 ax.set_ylim([0,ly])
 cbar = plt.colorbar(mapper)
-cbar.set_ticks(np.arange(tic_min, tic_max+ctic_inc/2.0, tic_inc))
+cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
 
 if (not make_movie):
 # Use Latex typesetting when not making movies
