@@ -41,6 +41,8 @@ Dump* createBulkCMDump(char* filenmae, int printInc);
 Dump* createGyrationDump(char* filename, int printInc, bool overwrite);
 Dump* createNeighbourDump(char* filename, int lx, int ly, int printInc,
 			  bool overwrite);
+Dump* createEnergyDump(char* filename, int lx, int ly, int printInc,
+		       bool overwrite);
 Dump* createOverlapDump(char* filename, int clx, int cly, int printInc,
 			bool overwrite);
 Dump* createOverlapFieldDump(char* filename, int clx, int cly, int cellIndex,

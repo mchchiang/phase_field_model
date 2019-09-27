@@ -158,6 +158,23 @@ int main (int argc, char* argv[]) {
 	}
       }
     }
+    // Energy dump
+    if (sscanf(line, "dump_energy %d %d %s %s",
+	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
+      // Only created the dump when the field size is known,
+      // as it is needed for creating the neighbour analysers
+      if (lx > 0 && ly > 0) {
+	if (strcmp(dumpMode, "equil") == 0 && nedumps+1 < maxDumps) {
+	  equilDumps[nedumps] =
+	    createEnergyDump(dumpFile, lx, ly, printInc, overwrite);
+	  nedumps++;
+	} else if (strcmp(dumpMode, "main") == 0 && ndumps+1 < maxDumps) {
+	  dumps[ndumps] =
+	    createEnergyDump(dumpFile, lx, ly, printInc, overwrite);
+	  ndumps++;
+	}
+      }
+    }
     // Overlap dump
     if (sscanf(line, "dump_overlap %d %d %s %s",
 	       &printInc, &overwrite, dumpMode, dumpFile) == 4) {
