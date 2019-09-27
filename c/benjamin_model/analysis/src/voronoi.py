@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import rc
 from matplotlib.animation import FuncAnimation
-from matplotlib.collections import LineCollection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 

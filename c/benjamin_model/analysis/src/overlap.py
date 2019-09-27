@@ -38,7 +38,7 @@ local_cm = []
 local_field = np.zeros((npoints,clx,cly))
 olap_field = np.zeros((npoints,clx,cly))
 olap = []
-data_map = []
+index_map = []
 
 def sgn(val):
     return (0.0 < val) - (val < 0.0)
@@ -85,7 +85,7 @@ def add_polygon(index, cxcm, cycm, xcm, ycm, dx, dy, contour):
         poly[:,1] += (ycm-cycm) + 0.5
         points.append((xcm,ycm))
         polygons.append(Polygon(poly))
-        data_map.append(index)
+        index_map.append(index)
 
 periodic_loc = [(lx,-ly),(lx,0),(lx,ly),(0,-ly),(0,0),(0,ly),(-lx,-ly),
                 (-lx,0),(-lx,ly)]
@@ -117,7 +117,6 @@ reader.close()
     
 for n in range(npoints):
     filename = fileroot + ("cell_{:d}.dat.{:d}".format(n,time))
-    print("Reading data from cell {:d}".format(n))
     with open(filename,'r') as reader:
         # For computing the local field centre of mass
         xavg = 0.0
@@ -149,8 +148,13 @@ for n in range(npoints):
 # Compute degree of overlap
 for m in range(npoints):
     olap_avg = 0.0
+    area = 0.0
     x0m = iwrap(cm[m][0]-local_cm[m][0])
     y0m = jwrap(cm[m][1]-local_cm[m][1])
+    for i in range(clx):
+        for j in range(cly):
+            if (local_field[m,i,j] < 1.0): continue
+            area += 1.0
     for n in range(npoints):
         if (m == n): continue
         x0n = iwrap(cm[n][0]-local_cm[n][0])
@@ -162,12 +166,20 @@ for m in range(npoints):
             xn = int(round(dx0mn+i))
             if (xn < 0 or xn >= clx): continue
             for j in range(cly):
+                phim = local_field[m,i,j]
+                if (phim < 1.0): continue
                 yn = int(round(dy0mn+j))
                 if (yn < 0 or yn >= cly): continue
-                prod = local_field[n,xn,yn]*local_field[m,i,j]
+                phin = local_field[n,xn,yn]
+                if (phin < 1.0): continue
+                phim = 0.0 if phim < 1.0 else 1.0
+                phin = 0.0 if phin < 1.0 else 1.0
+                prod = phim*phin
                 olap_avg += prod
                 olap_field[m,i,j] += prod
-    olap_avg /= (lx*ly)
+
+#    olap_avg /= (lx*ly)
+    olap_avg /= area
     olap.append(olap_avg)
 
 # Plot settings
@@ -197,13 +209,12 @@ plt.tick_params(axis="both", which="both", bottom=False, top=False,
 plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
 # For drawing each cell's interior
-colors = []
-for pt in range(len(data_map)):
-#    print(pt,olap[pt])
-    colors.append(mapper.to_rgba(olap[data_map[pt]],alpha=0.8))
+colours = []
+for pt in range(len(index_map)):
+    colours.append(mapper.to_rgba(olap[index_map[pt]],alpha=0.8))
 patches1 = PatchCollection(polygons, linewidth=0)
 plt_polygons1 = ax.add_collection(patches1)
-plt_polygons1.set_facecolor(colors)
+plt_polygons1.set_facecolor(colours)
 
 # For drawing each cell's boundary
 patches2 = PatchCollection(polygons, linewidth=1)
