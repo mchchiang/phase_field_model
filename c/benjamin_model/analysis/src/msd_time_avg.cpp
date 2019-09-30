@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <omp.h>
@@ -15,6 +16,7 @@ using std::cout;
 using std::endl;
 using std::ifstream;
 using std::ofstream;
+using std::istringstream;
 using std::vector;
 using std::string;
 
@@ -81,11 +83,23 @@ int main (int argc, char* argv[]) {
   }
   long t;
   double xcm, ycm;
-  for (int i = 0; i < nbins; i++) {
-    cmReader >> t >> xcm >> ycm;
-    totCM[i][0] = xcm;
-    totCM[i][1] = ycm;
+  istringstream iss;
+  string line;
+  while (getline(cmReader, line)) {
+    iss.clear();
+    iss.str(line);
+    iss >> t >> xcm >> ycm;
+    if (t > endTime) {
+      break;
+    } else if (t < startTime) {
+      continue;
+    } else {
+      ibin = static_cast<int>((t-startTime)/timeInc);
+      totCM[ibin][0] = xcm;
+      totCM[ibin][1] = ycm;
+    }
   }
+  cmReader.close();
 
   int i, j, k;
   int endShiftBin {static_cast<int>((endShiftTime-startTime)/timeInc)+1};
