@@ -34,10 +34,10 @@ struct Defect {
 
 int main(int argc, char* argv[]) {
   
-  if (argc != 14) {
+  if (argc != 16) {
     cout << "usage: overlap_defect_corr npoints lx ly cellLx cellLy startTime "
 	 << "endTime timeInc fieldTimeInc posFile neighFile fieldFileRoot "
-	 << "outFile" 
+	 << "olapAllFile olapNegDefectFile olapPosDefectFile" 
 	 << endl;
     return 1;
   }
@@ -55,7 +55,9 @@ int main(int argc, char* argv[]) {
   string posFile {argv[++argi]};
   string neighFile {argv[++argi]};
   string fieldFileRoot {argv[++argi]};
-  string outFile {argv[++argi]};
+  string olapAllFile {argv[++argi]};
+  string olapNegDefectFile {argv[++argi]};
+  string olapPosDefectFile {argv[++argi]};
   
   PositionReader posReader;
   posReader.open(posFile, npoints, lx, ly, timeInc);
@@ -155,10 +157,29 @@ int main(int argc, char* argv[]) {
   double numOfPoints {};
   double numOfPositiveDefects {};
   double numOfNegativeDefects {};
+
+  ofstream olapAllWriter, olapNegDefectWriter, olapPosDefectWriter;
+  olapAllWriter.open(olapAllFile);
+  olapNegDefectWriter.open(olapNegDefectFile);
+  olapPosDefectWriter.open(olapPosDefectFile);
+  if (!olapAllWriter) {
+    cout << "Problem with opening the file: " << olapAllFile << endl;
+    return 1;
+  }
+  if (!olapNegDefectWriter) {
+    cout << "Problem with opening the file: " << olapNegDefectFile << endl;
+    return 1;
+  }
+  if (!olapPosDefectWriter) {
+    cout << "Problem with opening the file: " << olapPosDefectFile << endl;
+    return 1;
+  }
+
   for (ibin = 0; ibin < nbins; ibin++) {
     // Skip time frames with no defects
     time = ibin*fieldTimeInc+startTime;
     if ((*defects)[ibin].size() == 0) continue;
+    cout << "Doing bin " << ibin << endl;
     for (int n {}; n < npoints; n++) {
       oss.str("");
       oss.clear();
@@ -241,21 +262,28 @@ int main(int argc, char* argv[]) {
       } // Close loop over all other cell n
       olapAvg /= area;
       olap[m] = olapAvg;
+      olapAllWriter << olap[m] << endl;
       numOfPoints += 1.0;
       totalOlapAvg += olapAvg;
     } // Close loop over all cells
     for (auto& d : (*defects)[ibin]) {
       if (d.sign > 0) {
-	cout << time << " +ve " << d.cellIndex << endl;
+	//cout << time << " +ve " << d.cellIndex << endl;
+	olapPosDefectWriter << olap[d.cellIndex] << endl;
 	numOfPositiveDefects++;
 	positiveDefectOlapAvg += olap[d.cellIndex];
       } else {
-	cout << time << " -ve " << d.cellIndex << endl;
+	//cout << time << " -ve " << d.cellIndex << endl;
+	olapNegDefectWriter << olap[d.cellIndex] << endl;
 	numOfNegativeDefects++;
 	negativeDefectOlapAvg += olap[d.cellIndex];
       }
     }
   } // Close time loop
+  
+  olapAllWriter.close();
+  olapNegDefectWriter.close();
+  olapPosDefectWriter.close();
 
   // Normalise results
   totalOlapAvg /= static_cast<double>(numOfPoints);

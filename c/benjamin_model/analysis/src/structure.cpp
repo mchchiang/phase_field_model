@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
   double r, x, y, prod;
   int i, j, k;
   for (ibin = 0; ibin < nbins; ibin++) {
-    cout << "Doing bin " << ibin << endl;
+    // cout << "Doing bin " << ibin << endl;
     // Generate the random q vectors
     for (i = 0; i < nqvec; i++) {
       r = rand(mt);

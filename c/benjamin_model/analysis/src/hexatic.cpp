@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
       double projection {dot(hexOrder[i][0], hexOrder[i][1], avgHexOrder[0], 
 			     avgHexOrder[1])/ (magHexOrder*magAvgHexOrder)};
       cellWriter << hexOrder[i][0] << " " << hexOrder[i][1] << " " 
-		 << projection << endl;
+		 << magHexOrder << " " << projection << endl;
     }
     cellWriter.unsetf(std::ios_base::floatfield);
     
