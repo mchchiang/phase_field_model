@@ -26,10 +26,10 @@ pe=$(python -c "print '%.3f' % ($pe_start)")
 msd_exe="../bin/exe/msd_time_avg"
 
 N=100 #100
-tstart=0
-tend=20000000
+tstart=1000000
+tend=21000000
 tinc=1000
-tshiftend=20000000 # 20000000
+tshiftend=21000000 # 20000000
 
 max_jobs=1
 nthreads=4
@@ -41,7 +41,7 @@ while (( $(bc <<< "$d < $d_end") ))
 do
     in_path="${in_dir}/d_${d}/"
     if [ -d $in_path ]; then
-	out_path="${out_dir}/d_${d}/msd/"
+	out_path="${out_dir}/d_${d}/msd/t_1000000-21000000/"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi

@@ -30,7 +30,7 @@ tstart=0
 tend=21000000
 tinc=1000
 
-max_jobs=8
+max_jobs=4 # 8
 cmd=()
 jobid=0
 
@@ -54,8 +54,8 @@ do
 		    params_file="${in_path}/siminfo/params_${name}.txt"
 		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
 		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
-		    hex_cell_file="${out_path}/hex-cell_${name}.dat"
-		    hex_file="${out_path}/hex_${name}.dat"
+		    hex_cell_file="${out_path}/hexatic-cell_${name}.dat"
+		    hex_file="${out_path}/hexatic_${name}.dat"
 		    cmd[$jobid]="$hex_exe $N $lx $ly $tstart $tend $tinc $pos_file $neigh_file $hex_cell_file $hex_file"
 		    jobid=$(bc <<< "$jobid + 1")
 		fi

@@ -32,13 +32,13 @@ vor_py="../src/voronoi.py"
 N=100 #100
 dt=0.5
 Dr=0.0001
-tstart=0 # 0
+tstart=21000000 # 0
 tend=21000000 # 21000000
 tinc=10000 # 10000
 
 # Output option
-make_movie=1
-print_to_screen=0
+make_movie=0
+print_to_screen=1
 
 # Parallel run options
 max_jobs=3
