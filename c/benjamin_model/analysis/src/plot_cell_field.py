@@ -19,8 +19,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
 args = sys.argv
-if (len(args) != 16):
-    print("usage: plot_cell_field.py npoints lx ly clx cly Dr dt tstart tend tinc make_movie print_to_screen fileroot pos_file out_file")
+if (len(args) != 23):
+    print("usage: plot_cell_field.py npoints lx ly clx cly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen fileroot pos_file data_file out_file")
     sys.exit(1)
 
 npoints = int(args.pop(1))
@@ -30,6 +30,12 @@ clx = int(args.pop(1))
 cly = int(args.pop(1))
 Dr = float(args.pop(1))
 dt = float(args.pop(1))
+data_col = int(args.pop(1)) # -1 for index field, -2 for overlap
+data_min = float(args.pop(1))
+data_max = float(args.pop(1))
+tic_start = float(args.pop(1))
+tic_end = float(args.pop(1))
+tic_inc = float(args.pop(1))
 tstart = int(args.pop(1))
 tend = int(args.pop(1))
 tinc = int(args.pop(1))
@@ -37,12 +43,13 @@ make_movie = bool(int(args.pop(1)))
 print_to_screen = bool(int(args.pop(1)))
 fileroot = args.pop(1)
 pos_file = args.pop(1)
+data_file = args.pop(1)
 out_file = args.pop(1)
 xbuff = 0.2*lx
 ybuff = 0.2*ly
 nframes = (tend-tstart)//tinc+1
 
-use_label=0 # 1
+use_label = 0 # 1
 
 if (not make_movie):
     tend = tstart
@@ -51,6 +58,7 @@ if (not make_movie):
 polygons = [[] for i in range(nframes)]
 points = [[] for i in range(nframes)]
 pos = [[(0.,0.) for j in range(npoints)] for i in range(nframes)]
+data_val = [[0.0 for j in range(npoints)] for i in range(nframes)]
 index_map = [[] for i in range(nframes)]
 time_map = [i*tinc+tstart for i in range(nframes)]
 
@@ -119,10 +127,12 @@ def read_field(index, frame, time):
 # Read position data
 nlines = npoints + 2
 reader = open(pos_file, 'r')
+
 while True:
     # Read header section (including time info)
     for i in range(2):
         line = reader.readline()
+    
     if (not line): break
     data = line.split()
     time = int(data[1])
@@ -147,11 +157,34 @@ while True:
             read_field(n, frame, time)
             
 reader.close()
+
+# Read data file
+if (data_col >= 0):
+    data_reader = open(data_file, 'r')
+    while True:
+        # Read header section (including time info)
+        for i in range(2):
+            line = data_reader.readline()
+        if (not line): break
+        data = line.split()
+        time = int(data[1])
+        if (time > tend):
+            break
+        elif (time < tstart or (time-tstart)%tinc != 0):
+            for i in range(npoints):
+                data_reader.readline()
+        else:
+            print("Reading data at timestep = {:d}".format(time))
+            frame = (time-tstart)//tinc
+            for n in range(npoints):
+                line = data_reader.readline()
+                data = line.split()
+                data_val[frame][n] = float(data[data_col])
+    data_reader.close()
+    
     
 # Make animation
 # Plot settings
-data_min = 0
-data_max = npoints-1
 norm = mpl.colors.Normalize(vmin=data_min, vmax=data_max, clip=True)
 mapper = mplcm.ScalarMappable(norm=norm, cmap=mplcm.RdYlBu_r)
 mapper.set_array([])
@@ -159,6 +192,8 @@ mapper.set_array([])
 fig, ax = plt.subplots()
 ax.set_xlim([0,lx])
 ax.set_ylim([0,ly])
+cbar = plt.colorbar(mapper)
+cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
 
 if (not make_movie):
 # Use Latex typesetting when not making movies
@@ -184,7 +219,7 @@ plt_pts, = ax.plot([],[], '.', markersize=5, color="black") # Empty data
 
 # Get the artist for plotting the time label
 if (use_label):
-    plt_time_txt = ax.text(0.5,0.005, "", fontsize=14,
+    plt_time_txt = ax.text(0.45,0.005, "", fontsize=14,
                            horizontalalignment="center",
                            transform=plt.gcf().transFigure)
 
@@ -206,7 +241,11 @@ def plot_data(frame):
     # Plot the cell polygons
     colors = []
     for pt in range(len(polygons[frame])):
-        colors.append(mapper.to_rgba(index_map[frame][pt], alpha=0.8))
+        if (data_col >= 0):
+            colors.append(mapper.to_rgba(
+                data_val[frame][index_map[frame][pt]], alpha=0.8))
+        else:
+            colors.append(mapper.to_rgba(index_map[frame][pt], alpha=0.8))
     plt_polygons_int.set_paths(polygons[frame])
     plt_polygons_int.set_facecolor(colors)
     plt_polygons_out.set_paths(polygons[frame])

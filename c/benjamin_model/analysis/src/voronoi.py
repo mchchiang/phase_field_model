@@ -38,36 +38,41 @@ print_to_screen = bool(int(args.pop(1)))
 pos_file = args.pop(1)
 data_file = args.pop(1)
 out_file = args.pop(1)
+xbuff = 0.2*lx
+ybuff = 0.2*ly
+nframes = (tend-tstart)/tinc+1
+
+use_label = 0 # 1
 
 if (not make_movie):
     tend = tstart
 
-# Read the position data
-nlines = npoints + 2
-xbuff = 0.2*lx
-ybuff = 0.2*ly
-nframes = (tend-tstart)/tinc+1
+# Data arrays
 pos = [[] for i in xrange(nframes)]
-data_map = [{} for i in xrange(nframes)]
+data_val = [[0.0 for j in xrange(npoints)] for i in xrange(nframes)]
+index_map = [[] for i in xrange(nframes)]
 time_map = [i*tinc+tstart for i in xrange(nframes)]
 
-def add_point(frame, x, y, val):
+# Useful functions for plotting
+def add_point(index, x, y, frame):
     global pos, data_map, lx, ly, xbuff, ybuff
     if (x < lx+xbuff and x > -xbuff and y < ly+ybuff and y > -ybuff):
         pos[frame].append((x,y))
-        data_map[frame][(x,y)] = val
+        index_map[frame].append(index)
+#        data_map[frame][(x,y)] = val
 
 periodic_loc = [(lx,-ly),(lx,0),(lx,ly),(0,-ly),(0,0),(0,ly),(-lx,-ly),
                 (-lx,0),(-lx,ly)]
 
+
+# Read position data
+nlines = npoints + 2
 reader = open(pos_file, 'r')
-data_reader = open(data_file, 'r')
 
 while True:
     # Read header section (including time info)
     for i in xrange(2):
         line = reader.readline()
-        data_reader.readline()
     if (not line): break
     data = line.split()
     time = int(data[1])
@@ -76,22 +81,40 @@ while True:
     elif (time < tstart or (time-tstart) % tinc != 0):
         for i in xrange(npoints):
             line = reader.readline()
-            data_reader.readline()
     else:
         frame = (time-tstart)/tinc
-        for i in xrange(npoints):
+        for n in xrange(npoints):
             line = reader.readline()
             data = line.split()
             x = float(data[0])
             y = float(data[1])
-            line = data_reader.readline()
-            data = line.split()
-            val = float(data[data_col])
             for pt in periodic_loc:
-                add_point(frame,x+pt[0], y+pt[1], val)
+                add_point(n, x+pt[0], y+pt[1], frame)
     
 reader.close()
-data_reader.close()
+
+if (data_col >= 0):
+    data_reader = open(data_file, 'r')
+    while True:
+        # Read header section (including time info)
+        for i in xrange(2):
+            line = data_reader.readline()
+        if (not line): break
+        data = line.split()
+        time = int(data[1])
+        if (time > tend):
+            break
+        elif (time < tstart or (time-tstart) % tinc != 0):
+            for n in xrange(npoints):
+                data_reader.readline()
+        else:
+            frame = (time-tstart)/tinc
+            for n in xrange(npoints):
+                line = data_reader.readline()
+                data = line.split()
+                data_val[frame][n] = float(data[data_col])
+                
+    data_reader.close()
 
 # Make animation
 # Plot settings
@@ -106,6 +129,7 @@ cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
 
 if (not make_movie):
 # Use Latex typesetting when not making movies
+    mpl.rcParams["text.latex.unicode"] = True
     mpl.rcParams["text.latex.preamble"] = [
         r'\usepackage{amsmath}',
         r'\usepackage{amssymb}',
@@ -119,14 +143,16 @@ plt.tick_params(axis="both", which="both", bottom=False, top=False,
                 labelbottom=False, right=False, left=False, labelleft=False)
 
 # Set plot margins
-plt.subplots_adjust(left=0.05,right=1.0,top=0.95,bottom=0.05)
+plt.subplots_adjust(left=0.05,right=0.95,top=0.95,bottom=0.05)
 
 # Get the artist for plotting centre of Voronoi cells
 plt_pts, = ax.plot([],[], '.', markersize=5, color="black") # Empty data
 
 # Get the artist for plotting the time label
-plt_time_txt = ax.text(0.45,0.005,"",fontsize=14,horizontalalignment="center",
-                       transform=plt.gcf().transFigure)
+if (use_label):
+    plt_time_txt = ax.text(0.45,0.005,"",fontsize=14,
+                           horizontalalignment="center",
+                           transform=plt.gcf().transFigure)
 
 # Get the artist for plotting the polygons
 patches = PatchCollection([], linewidth=1.0)
@@ -146,16 +172,21 @@ def plot_data(frame):
     for r in xrange(len(vor.point_region)):
         region = vor.regions[vor.point_region[r]]
         if -1 in region: continue
-        pt = tuple(vor.points[r])
+#        pt = tuple(vor.points[r])
         poly = [vor.vertices[i] for i in region]
         polygons.append(Polygon(poly))
-        colors.append(mapper.to_rgba(data_map[frame][pt]))
+        if (data_col >= 0):
+            colors.append(mapper.to_rgba(
+                data_val[frame][index_map[frame][r]]))
+        else:
+            colours.append(mapper.to_rgba(index_map[frame][r]))
     plt_polygons.set_paths(polygons)
     plt_polygons.set_facecolor(colors)
     plt_polygons.set_edgecolor("black")
 
     # Plot the time label
-    plt_time_txt.set_text(r"$D_rt = {:.1f}$".format(time_map[frame]*Dr*dt))
+    if (use_label):
+        plt_time_txt.set_text(r"$D_rt = {:.1f}$".format(time_map[frame]*Dr*dt))
     
     return plt_pts, plt_polygons,
 

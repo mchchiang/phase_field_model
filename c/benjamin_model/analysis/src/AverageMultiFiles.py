@@ -54,7 +54,9 @@ for rows in izip(*files):
         # use un-biased estimate of variance
         if (n > 1):
             var = n / (n-1) * (avgSq - avg*avg)
-            sigma = math.sqrt(var) 
+            if (var < 0.0):
+                print "Negative variance: var = %.5f" % var
+            sigma = math.sqrt(abs(var)) 
         else:
             var = 0
             sigma = 0

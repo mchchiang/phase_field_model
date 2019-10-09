@@ -177,16 +177,14 @@ for m in range(npoints):
                 prod = phim*phin
                 olap_avg += prod
                 olap_field[m,i,j] += prod
-
-#    olap_avg /= (lx*ly)
     olap_avg /= area
     olap.append(olap_avg)
 
 # Plot settings
-#data_min = 0.0
-#data_max = 0.01
-data_min = min(olap)
-data_max = max(olap)
+data_min = 0.59
+data_max = 0.65
+#data_min = min(olap)
+#data_max = max(olap)
 norm = mpl.colors.Normalize(vmin=data_min, vmax=data_max, clip=True)
 mapper = mplcm.ScalarMappable(norm=norm, cmap=mplcm.RdYlBu_r)
 mapper.set_array([])
