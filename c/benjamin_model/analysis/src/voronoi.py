@@ -3,6 +3,12 @@
 # a specific data set
 
 import sys
+
+# This code must be run with python3!
+if (sys.version_info < (3, 5)):
+    print("This code must be run with Python version 3.5 or higher")
+    sys.exit(1)
+
 import numpy as np
 import scipy.spatial as spatial
 import matplotlib as mpl
@@ -16,7 +22,7 @@ from matplotlib.patches import Polygon
 
 args = sys.argv
 if (len(args) != 20):
-    print "usage: voronoi.py npoints lx ly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen pos_file data_file out_file"
+    print("usage: voronoi.py npoints lx ly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen pos_file data_file out_file")
     sys.exit(1)
 
 npoints = int(args.pop(1))
@@ -40,18 +46,19 @@ data_file = args.pop(1)
 out_file = args.pop(1)
 xbuff = 0.2*lx
 ybuff = 0.2*ly
-nframes = (tend-tstart)/tinc+1
+nframes = int((tend-tstart)//tinc+1)
 
 use_label = 0 # 1
+use_cbar = 1 # 1
 
 if (not make_movie):
     tend = tstart
 
 # Data arrays
-pos = [[] for i in xrange(nframes)]
-data_val = [[0.0 for j in xrange(npoints)] for i in xrange(nframes)]
-index_map = [[] for i in xrange(nframes)]
-time_map = [i*tinc+tstart for i in xrange(nframes)]
+pos = [[] for i in range(nframes)]
+data_val = [[0.0 for j in range(npoints)] for i in range(nframes)]
+index_map = [[] for i in range(nframes)]
+time_map = [i*tinc+tstart for i in range(nframes)]
 
 # Useful functions for plotting
 def add_point(index, x, y, frame):
@@ -71,7 +78,7 @@ reader = open(pos_file, 'r')
 
 while True:
     # Read header section (including time info)
-    for i in xrange(2):
+    for i in range(2):
         line = reader.readline()
     if (not line): break
     data = line.split()
@@ -79,11 +86,11 @@ while True:
     if (time > tend):
         break
     elif (time < tstart or (time-tstart) % tinc != 0):
-        for i in xrange(npoints):
+        for i in range(npoints):
             line = reader.readline()
     else:
-        frame = (time-tstart)/tinc
-        for n in xrange(npoints):
+        frame = int((time-tstart)//tinc)
+        for n in range(npoints):
             line = reader.readline()
             data = line.split()
             x = float(data[0])
@@ -97,7 +104,7 @@ if (data_col >= 0):
     data_reader = open(data_file, 'r')
     while True:
         # Read header section (including time info)
-        for i in xrange(2):
+        for i in range(2):
             line = data_reader.readline()
         if (not line): break
         data = line.split()
@@ -105,11 +112,11 @@ if (data_col >= 0):
         if (time > tend):
             break
         elif (time < tstart or (time-tstart) % tinc != 0):
-            for n in xrange(npoints):
+            for n in range(npoints):
                 data_reader.readline()
         else:
-            frame = (time-tstart)/tinc
-            for n in xrange(npoints):
+            frame = int((time-tstart)//tinc)
+            for n in range(npoints):
                 line = data_reader.readline()
                 data = line.split()
                 data_val[frame][n] = float(data[data_col])
@@ -118,25 +125,34 @@ if (data_col >= 0):
 
 # Make animation
 # Plot settings
+fontsize = 20
 norm = mpl.colors.Normalize(vmin=data_min, vmax=data_max, clip=True)
 mapper = cm.ScalarMappable(norm=norm, cmap=cm.RdYlBu_r)
 mapper.set_array([])
 fig, ax = plt.subplots()
 ax.set_xlim([0,lx])
 ax.set_ylim([0,ly])
-cbar = plt.colorbar(mapper)
-cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
+ax.tick_params(axis="both", labelsize=fontsize)
 
-if (not make_movie):
+if (use_cbar):
+    cbar = plt.colorbar(mapper)
+    cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
+    cbar.ax.tick_params(labelsize=fontsize)
+
+#if (not make_movie):
 # Use Latex typesetting when not making movies
-    mpl.rcParams["text.latex.unicode"] = True
-    mpl.rcParams["text.latex.preamble"] = [
-        r'\usepackage{amsmath}',
-        r'\usepackage{amssymb}',
-        r'\usepackage[scaled=1]{helvet}',
-        r'\usepackage{sansmath}',
-        r'\sansmath']
-    plt.rc("text", usetex=True)
+#    mpl.rcParams["text.latex.unicode"] = True
+#    mpl.rcParams["text.latex.preamble"] = [
+#        r'\usepackage{amsmath}',
+#        r'\usepackage{amssymb}',
+#        r'\usepackage[scaled=1]{helvet}',
+#        r'\usepackage{sansmath}',
+#        r'\sansmath']
+#    plt.rc("text", usetex=True)
+#    mpl.rcParams['axes.unicode_minus'] = False
+
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = 'FreeSans' # A font close to Helvetica
 
 # Draw borders but no axes and ticks
 plt.tick_params(axis="both", which="both", bottom=False, top=False, 
@@ -153,6 +169,7 @@ if (use_label):
     plt_time_txt = ax.text(0.45,0.005,"",fontsize=14,
                            horizontalalignment="center",
                            transform=plt.gcf().transFigure)
+    plt_time_txt.set_fontsize(fontsize)
 
 # Get the artist for plotting the polygons
 patches = PatchCollection([], linewidth=1.0)
@@ -169,7 +186,7 @@ def plot_data(frame):
     # Plot the Voronoi polygons
     colors = []
     polygons = []
-    for r in xrange(len(vor.point_region)):
+    for r in range(len(vor.point_region)):
         region = vor.regions[vor.point_region[r]]
         if -1 in region: continue
 #        pt = tuple(vor.points[r])

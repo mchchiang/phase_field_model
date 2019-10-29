@@ -185,6 +185,7 @@ if (data_col >= 0):
     
 # Make animation
 # Plot settings
+fontsize = 14
 norm = mpl.colors.Normalize(vmin=data_min, vmax=data_max, clip=True)
 mapper = mplcm.ScalarMappable(norm=norm, cmap=mplcm.RdYlBu_r)
 mapper.set_array([])
@@ -195,15 +196,22 @@ ax.set_ylim([0,ly])
 cbar = plt.colorbar(mapper)
 cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
 
-if (not make_movie):
+#if (not make_movie):
 # Use Latex typesetting when not making movies
-    mpl.rcParams["text.latex.preamble"] = [
-        r'\usepackage{amsmath}',
-        r'\usepackage{amssymb}',
-        r'\usepackage[scaled=1]{helvet}',
-        r'\usepackage{sansmath}',
-        r'\sansmath']
-    plt.rc("text", usetex=True)
+#    mpl.rcParams["text.latex.unicode"] = True
+#    mpl.rcParams["text.latex.preamble"] = [
+#        r'\usepackage{amsmath}',
+#        r'\usepackage{amssymb}',
+#        r'\usepackage[scaled=1]{helvet}',
+#        r'\usepackage{sansmath}',
+#        r'\sansmath']
+#    plt.rc("text", usetex=True)
+
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = 'FreeSans' # A font close to Helvetica
+
+ax.tick_params(axis="both", labelsize=fontsize)
+cbar.ax.tick_params(labelsize=fontsize)
 
 # Draw borders but no axes and ticks
 plt.tick_params(axis="both", which="both", bottom=False, top=False,
@@ -222,6 +230,7 @@ if (use_label):
     plt_time_txt = ax.text(0.45,0.005, "", fontsize=14,
                            horizontalalignment="center",
                            transform=plt.gcf().transFigure)
+    plt_time_txt.set_fontsize(fontsize)
 
 # Get the artist for plotting the polygons
 patches_int = PatchCollection([], linewidth=0)
