@@ -28,7 +28,7 @@ fi
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=36 #100
+N=100 #100
 t_start=0
 t_end=21000000
 t_inc=100000
