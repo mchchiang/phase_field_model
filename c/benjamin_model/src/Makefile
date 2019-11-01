@@ -25,7 +25,7 @@ SRC_C := cell.c phase_field_model.c array.c image.c overlap.c dump.c dump_cm.c d
 SRC_CXX := neighbour.cpp
 ifeq ($(HAS_ARMA),1)
 	SRC_C := $(SRC_C) shape.c dump_shape.c
-	SRC_CXX := $(SRC_CXX) filter.cpp sgolay_filter.cpp
+	SRC_CXX := $(SRC_CXX) sgolay_filter.cpp
 	LFLAGS := $(LFLAGS) -larmadillo
 endif
 OBJ_C := $(patsubst %.c, $(ODIR)/%.o, $(SRC_C))
