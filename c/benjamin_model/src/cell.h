@@ -14,6 +14,7 @@ typedef struct {
   int x; // x pos of the cell relative to main lattice
   int y; // y pos of the cell relative to main lattice
   int type;
+  double v; // Speed of the cell
   double vx; // x velocity of the cell
   double vy; // y velocity of the cell
   double theta;
@@ -29,7 +30,7 @@ typedef struct {
 } Cell;
 
 Cell* createCell(int x, int y, int lx, int ly, double dr,
-	       double incell, unsigned long seed);
+		 double incell, unsigned long seed);
 void deleteCell(Cell* cell);
 void initFieldSquare(Cell* cell, int x0, int y0, int dx, int dy, double phi0);
 void initField(Cell* cell, double** field);

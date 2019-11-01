@@ -10,7 +10,7 @@
 #include "constant.h"
 
 Cell* createCell(int x, int y, int lx, int ly,
-	       double dr, double incell, unsigned long seed) {
+		 double dr, double incell, unsigned long seed) {
   // Allocate memory for a cell
   Cell* cell = malloc(sizeof *cell);
   
@@ -37,6 +37,7 @@ Cell* createCell(int x, int y, int lx, int ly,
   cell->theta = randDouble(cell->random)*2.0*PF_PI;
   cell->vx = cos(cell->theta);
   cell->vy = sin(cell->theta);
+  cell->v = 1.0;
   cell->gyration = create1DDoubleArray(3);
   return cell;
 }

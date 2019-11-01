@@ -99,16 +99,22 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
   }
   
   int index;
-  double xcm, ycm;
+  double xcm, ycm, vx, vy;
   int count = 0;
   Cell* cell;
   while (fgets(line, sizeof(line), fcm) != NULL) {
-    nvar = sscanf(line, "%d %lf %lf", &index, &xcm, &ycm);
-    if (nvar == 3) {
+    nvar = sscanf(line, "%d %lf %lf", &index, &xcm, &ycm, &vx, &vy);
+    if (nvar == 3 || nvar == 5) {
       x = (int)(xcm-clx/2);
       y = (int)(ycm-cly/2);
       cell = createCell(x, y, clx, cly, model->Dr, 
 			model->phi0/2.0, index+seed);
+      if (nvar == 5) {
+	cell->vx = vx;
+	cell->vy = vy;
+	cell->v = sqrt(vx*vx+vy*vy);
+	cell->theta = atan2(-vy,-vx)+PF_PI;
+      }
       model->cells[index] = cell;
       initField(cell, field);
       count++;
