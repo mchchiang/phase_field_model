@@ -12,6 +12,10 @@
 #define PF_DIR_SIZE 500
 #endif
 
+#ifndef PF_HAS_ARMA
+#define PF_HAS_ARMA 1
+#endif
+
 struct PhaseFieldModel;
 struct Dump;
 
@@ -47,9 +51,10 @@ Dump* createOverlapDump(char* filename, int clx, int cly, int printInc,
 			bool overwrite);
 Dump* createOverlapFieldDump(char* filename, int clx, int cly, int cellIndex,
 			     int printInc, bool overwrite);
+#if PF_HAS_ARMA
 Dump* createShapeDump(char* filename, int scale, int lx, int ly,
 		      int kernelLength, double sigma, int sgolayDegree,
 		      int sgolayLength, double threshold, int printInc,
 		      bool overwrite);
-
+#endif
 #endif

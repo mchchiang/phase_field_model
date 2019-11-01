@@ -43,8 +43,10 @@ int main (int argc, char* argv[]) {
   int nedumps = 0;
   int maxDumps = 1000;
   int printInc, overwrite, cellIndex;
+#if PF_HAS_ARMA
   int fieldScale, kernelLength, sgolayDegree, sgolayLength;
   double kernelSigma;
+#endif
   Dump** equilDumps = malloc(sizeof *equilDumps * maxDumps);
   Dump** dumps = malloc(sizeof *dumps * maxDumps);
 
@@ -211,6 +213,7 @@ int main (int argc, char* argv[]) {
 	}
       }
     }
+#if PF_HAS_ARMA
     // Shape dump
     if (sscanf(line, "dump_shape %d %d %lf %d %d %d %d %s %s",
 	       &fieldScale, &kernelLength, &kernelSigma,
@@ -234,7 +237,7 @@ int main (int argc, char* argv[]) {
 	}
       }
     }
-
+#endif
   }
   equilDumps = realloc(equilDumps, sizeof *equilDumps * nedumps);
   dumps = realloc(dumps, sizeof *dumps * ndumps);
