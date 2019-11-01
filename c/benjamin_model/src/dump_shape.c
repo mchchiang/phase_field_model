@@ -74,6 +74,7 @@ void shapeOutput(ShapeDump* dump, PhaseFieldModel* model, int step) {
   for (int i = 0; i < ncells; i++) {
     deleteShapeInfo(info[i]);
   }
+  free(info);
 }
 
 void deleteShapeDump(ShapeDump* dump) {
