@@ -5,15 +5,15 @@ import argparse
 import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument("nx", type=int, help="width of lattice")
-parser.add_argument("ny", type=int, help="height of lattice")
-parser.add_argument("phi0", type=float, help="maximum value of phi")
-parser.add_argument("outfile", help="name of output file")
+parser.add_argument("nx", type=int, help="Width of lattice")
+parser.add_argument("ny", type=int, help="Height of lattice")
+parser.add_argument("phi0", type=float, help="Maximum value of phi")
+parser.add_argument("outfile", help="Name of output file")
 subparsers = parser.add_subparsers(title="shapes",dest="shape")
 parser_circle = subparsers.add_parser("circle")
 parser_square = subparsers.add_parser("square")
-parser_circle.add_argument("radius", type=float, help="radius of the cell")
-parser_square.add_argument("length", type=float, help="length of the cell")
+parser_circle.add_argument("radius", type=float, help="Radius of the cell")
+parser_square.add_argument("length", type=float, help="Length of the cell")
 args = parser.parse_args()
 
 nx = args.nx

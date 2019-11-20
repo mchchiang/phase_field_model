@@ -132,8 +132,8 @@ void updateVolume(Cell* cell) {
 void updateVelocity(Cell* cell, double dt) {
   cell->theta += sqrt(6.0 * cell->rotateDiff * dt) *
     (randDouble(cell->random)*2.0-1.0);
-  cell->vx = cos(cell->theta);
-  cell->vy = sin(cell->theta);
+  cell->vx = cell->v*cos(cell->theta);
+  cell->vy = cell->v*sin(cell->theta);
 }
 
 void shiftCoordinates(Cell* cell, int xShift, int yShift) {

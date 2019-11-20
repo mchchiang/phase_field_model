@@ -103,7 +103,7 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
   int count = 0;
   Cell* cell;
   while (fgets(line, sizeof(line), fcm) != NULL) {
-    nvar = sscanf(line, "%d %lf %lf", &index, &xcm, &ycm, &vx, &vy);
+    nvar = sscanf(line, "%d %lf %lf %lf %lf", &index, &xcm, &ycm, &vx, &vy);
     if (nvar == 3 || nvar == 5) {
       x = (int)(xcm-clx/2);
       y = (int)(ycm-cly/2);
@@ -113,7 +113,9 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
 	cell->vx = vx;
 	cell->vy = vy;
 	cell->v = sqrt(vx*vx+vy*vy);
-	cell->theta = atan2(-vy,-vx)+PF_PI;
+	if (cell->v > 0.0) {
+	  cell->theta = atan2(-vy,-vx)+PF_PI;
+	}
       }
       model->cells[index] = cell;
       initField(cell, field);
@@ -196,6 +198,8 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
   int cy = cell->y;
   int set = cell->setIndex;
   int get = cell->getIndex;
+  double vx = cell->vx;
+  double vy = cell->vy;
 
   double** cellField = cell->field[get];
   double cahnHilliard, volumeConst, advection, repulsion, phi;
@@ -228,8 +232,8 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
 
       // Advection term (use the 3rd order upwind scheme)
       advection = model->motility *
-	(upwind(model, i, j, iuu, iu, id, idd, 0, cell->vx, cellField) +
-	 upwind(model, i, j, juu, ju, jd, jdd, 1, cell->vy, cellField));
+	(upwind(model, i, j, iuu, iu, id, idd, 0, vx, cellField) +
+	 upwind(model, i, j, juu, ju, jd, jdd, 1, vy, cellField));
 
       // Repulsion term
       x = iwrap(model, cx+i);

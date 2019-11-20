@@ -43,7 +43,7 @@ epsilon=0.1
 rotate_diff=0.0001
 relax_rate=0.1
 
-nsteps=1000000 # 20000000 # Add another 10^6 steps for equilibration
+nsteps=21000000 # 20000000 # Add another 10^6 steps for equilibration
 nequil=10000 # 10000
 delta_t=0.5 # 0.5
 dump_cm_freq=1000 # 1000
@@ -71,8 +71,9 @@ motility=$(python -c "print '{:f}'.format($peclet*$rotate_diff*$ideal_radius)")
 # Set a hexagonal lattice
 tmp_cm_file="cm_$seed.tmp"
 tmp_shape_file="shape_$seed.tmp"
-#size=$(python triangle.py $ncell_x $ncell_y $confine_radius $tmp_cm_file)
-size=$(python square.py $ncell_x $ncell_y $confine_radius $tmp_cm_file)
+size=$(python triangle.py $ncell_x $ncell_y $confine_radius $tmp_cm_file)
+#size=$(python square.py $ncell_x $ncell_y $confine_radius $tmp_cm_file)
+#size=$(python square.2.py 160 138 $ncell_x $ncell_y $confine_radius $tmp_cm_file)
 Lx=$(echo $size | awk '{print $3}')
 Ly=$(echo $size | awk '{print $6}')
 python cell_shape.py $cell_Lx $cell_Ly $phi0 $tmp_shape_file circle $init_radius
@@ -140,9 +141,9 @@ function add_dump() {
 	echo "$params $file" >> $params_file 
     fi
 }
-add_dump "dump_cm $equildump_cm_freq 0 equil" $equildump_cm_file
-add_dump "dump_gyr $equildump_gyr_freq 0 equil" $equildump_gyr_file
-add_dump "dump_field $equildump_field_freq 0 equil" $equildump_field_file
+#add_dump "dump_cm $equildump_cm_freq 0 equil" $equildump_cm_file
+#add_dump "dump_gyr $equildump_gyr_freq 0 equil" $equildump_gyr_file
+#add_dump "dump_field $equildump_field_freq 0 equil" $equildump_field_file
 add_dump "dump_cm $dump_cm_freq 0 main" $dump_cm_file
 add_dump "dump_gyr $dump_gyr_freq 0 main" $dump_gyr_file
 add_dump "dump_field $dump_field_freq 0 main" $dump_field_file
@@ -150,10 +151,10 @@ add_dump "dump_index_field $dump_index_field_freq 0 main" $dump_index_field_file
 add_dump "dump_bulk_cm $dump_bulk_cm_freq main" $dump_bulk_cm_file
 add_dump "dump_shape 4 25 4.0 5 31 $dump_shape_freq 0 main" $dump_shape_file
 add_dump "dump_neighbour $dump_neighbour_freq 0 main" $dump_neighbour_file
-add_dump "dump_energy $dump_energy_freq 0 main" $dump_energy_file
+#add_dump "dump_energy $dump_energy_freq 0 main" $dump_energy_file
 #add_dump "dump_overlap $dump_overlap_freq 0 main" $dump_overlap_file
 
-for (( i=0; $i<$ncells; i++ ))
-do
-    add_dump "dump_cell_field $i $dump_cell_field_freq 0 main" "${dump_cell_field_file}_cell_${i}.dat"
-done
+#for (( i=0; $i<$ncells; i++ ))
+#do
+#    add_dump "dump_cell_field $i $dump_cell_field_freq 0 main" "${dump_cell_field_file}_cell_${i}.dat"
+#done

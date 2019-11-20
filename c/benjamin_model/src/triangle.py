@@ -20,6 +20,8 @@ ncells = nx*ny
 
 lx = int(2*r*nx)
 ly = int(3**0.5*r*ny)
+#lx = int(3**0.5*r*nx)
+#ly = int(2*r*ny)
 
 print "lx = {:d} ly = {:d}".format(lx, ly)
 
@@ -27,4 +29,6 @@ with open (outfile, "w") as writer:
     for i in xrange(0,ncells):
         x = r*((i/nx)%2) + 2*r*(i%nx)
         y = 3**0.5*r*(i/nx)
+#        x = 3**0.5*r*(i/nx)
+#        y = r*((i/nx)%2) + 2*r*(i%nx)
         writer.write("{:d} {:.5f} {:.5f}\n".format(i,x,y))
