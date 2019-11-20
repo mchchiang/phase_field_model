@@ -23,13 +23,14 @@ fi
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=100 # 100
+N=36 # 100
 
 while (( $(bc <<< "$d < $d_end") ))
 do
-    in_path="${in_dir}/d_${d}/neighbour"
+    #in_path="${in_dir}/d_${d}/neighbour"
+    in_path="${in_dir}/d_${d}/neigh_delaunay"
     if [ -d $in_path ]; then
-	out_path="${out_dir}/d_${d}/neighdiff"
+	out_path="${out_dir}/d_${d}/neigh_delaunay"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi

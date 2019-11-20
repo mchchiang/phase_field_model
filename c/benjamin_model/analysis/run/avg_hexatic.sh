@@ -23,7 +23,7 @@ d=$(python -c "print '%.3f' % ($d_start)")
 d_old=$d
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=100 #100
+N=36 #100
 
 tstart=10000000
 tend=20000000
@@ -34,7 +34,8 @@ hexatic_overall_file="${out_dir}/hexatic_cell_N_${N}_d_${d_start}-${d_end}-${d_i
 
 while (( $(bc <<< "$d < $d_end") ))
 do
-    in_path="${in_dir}/d_${d}/hexatic/"
+    #in_path="${in_dir}/d_${d}/hexatic/"
+    in_path="${in_dir}/d_${d}/hexatic_delaunay/"
     pe=$(python -c "print '%.3f' % ($pe_start)")
     
     while (( $(bc <<< "$pe < $pe_end") ))
