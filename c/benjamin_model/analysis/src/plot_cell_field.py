@@ -49,7 +49,7 @@ xbuff = 0.2*lx
 ybuff = 0.2*ly
 nframes = (tend-tstart)//tinc+1
 
-use_label = 0 # 1
+use_label = 1 # 1
 
 if (not make_movie):
     tend = tstart
@@ -193,8 +193,8 @@ mapper.set_array([])
 fig, ax = plt.subplots()
 ax.set_xlim([0,lx])
 ax.set_ylim([0,ly])
-cbar = plt.colorbar(mapper)
-cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
+#cbar = plt.colorbar(mapper)
+#cbar.set_ticks(np.arange(tic_start, tic_end+tic_inc/2.0, tic_inc))
 
 #if (not make_movie):
 # Use Latex typesetting when not making movies
@@ -211,7 +211,7 @@ plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.sans-serif'] = 'FreeSans' # A font close to Helvetica
 
 ax.tick_params(axis="both", labelsize=fontsize)
-cbar.ax.tick_params(labelsize=fontsize)
+#cbar.ax.tick_params(labelsize=fontsize)
 
 # Draw borders but no axes and ticks
 plt.tick_params(axis="both", which="both", bottom=False, top=False,
