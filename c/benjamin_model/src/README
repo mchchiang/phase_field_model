@@ -1,0 +1,528 @@
+
+This document explains how to compile and run the phase field model program.
+
+###############################################################################
+
+0. Dependencies
+
+The program is written in a mixture of C and C++. The only external dependecy 
+is the linear algebra package Armadillo, which is used for calculating 
+geometric properties of the cells (e.g., perimeter and area). This package 
+should be downloaded (http://arma.sourceforge.net/download.html) and installed
+before compiling the main simulation code. If one does not need to calculate 
+these geometric properties, it is possible to compile the code without the 
+Armadillo package. This is explained in Section 1. 
+
+
+###############################################################################
+
+1. Compiling the code
+
+The most convenient way to compile the code is to use the provided Makefile.
+For general compilation, go to the src directory and open the Makefile with a
+text editor. Modify the following lines in the Makefile:
+
+CC := c_compiler       <- gcc (for GNU compiler) or icc (for Intel compiler)
+CXX := c++_compiler    <- g++ (for GNU compiler) or icpc (for Intel compiler)
+HAS_ARMA := {0,1}      <- 0 for no Armadillo package; 1 for yes
+
+You may also need to modify the library flags to link an appropriate maths
+library. For instance, you may need to add the -lm flag: 
+
+LFAGS := -lm
+
+Note that this may not be necessary for Intel compilers. 
+
+After modifying the Makefile, one can compile the code by entering the command
+
+    make
+
+This should compile all source files and generate object files in the bin/obj
+directory and an executable called 'run_phase_field_model' in the bin/exe/
+directory. To remove all compiled files, enter the command
+
+    make clean
+
+More advance compilation options:
+
+----------------------------------------
+
+a) Compiling with OpenMP
+
+The program supports OpenMP parallelisation. To compile the code with OpenMP
+support, open the Makefile and edit the following:
+
+i)  For GNU compiler:
+Add the flag -fopenmp in the CFLAGS and CXXFLAGS section, i.e.,
+    CFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11 -fopenmp
+    CXXFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11 -fopenmp
+Add the flag -lgomp in the LFLAGS section, i.e.,
+    LFLAGS := -lm -lgomp
+
+ii) For Intel compiler:
+Add the flag -qopenmp in the CFLAGS and CXXFLAGS section, i.e.,
+    CFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11 -qopenmp
+    CXXFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11 -qopenmp
+
+
+###############################################################################
+
+2. Running the program
+
+Running the program involves four steps:
+
+a) Creating the position file
+b) Creating the shape/field file
+c) Creating the parameter file
+d) Running the program with the parameter file
+
+Note that creating the position file, shape file, and parameter file manually
+can be somewhat cumbersome. A bash script called 'phase_field_init.sh' and
+several python scripts have been included to automate this process. See
+Section 3 for more details.
+
+----------------------------------------
+
+a) Creating the position file
+
+The position file must include the centre of mass position of each cell. It
+can also include the cells' velocities if they are not homogeneous. The file 
+should have the following format:
+
+cell_index x y [vx vy]
+
+where x and y are the components of the cell's centre of mass and vx and vy
+are the components of its velocity. Note that vx and vy are optional. By 
+default, the speed of each cell is 1.0 (subject to modification by the motility
+parameter -- see below), and its direction is randomly initialised between 0 to
+2*pi. 
+
+----------------------------------------
+
+b) Creating the shape/field file
+
+The shape file stores the inital configuration of the local field for a cell
+(the current program can only handle the case where all cells start from the
+same the configuration/shape). The field must be specified in the usual three-
+column format:
+
+x y value
+
+where x and y are the index of each lattice site and value is the cell density
+(i.e., phi_i(x,y)) at that site.
+
+----------------------------------------
+
+c) Creating the parameter file
+
+The parameter file includes all the parameters required for running the mode
+to be read by the program. This file should be divided into two sections: the
+first section specifies the parameters needed for running the program, and the
+second section specifies the observables to be measured and dumped from the
+simulation. The first section must have the following format (note that the
+order of the parameters does not matter):
+
+phi0 = phi0_value
+M = relax_rate
+R = ideal_radius
+kappa = kappa_value
+alpha = alpha_value
+mu = mu_value
+Dr = rotational_diffusion_const
+epsilon = epsilon_value
+celllx = local_field_lx
+cellly = local_field_ly
+lx = total_field_lx
+ly = total_field_ly
+ncells = number_of_cells
+nsteps = main_simulation_timesteps
+nequil = equilibration_timesteps
+dt = timestep_interval
+v = motility
+seed = random_generator_seed
+cm_file = directory_of_position_file
+shape_file = directory_of_shape_file
+
+where the RHS of each line should be replaced by the relevant parameter value.
+Note that there must be only a single space surrounding the = sign; otherwise,
+the parameter value will not be read. 
+
+During the equilibration period, the motility parameter is set to zero and the
+cells are allowed to relax the ground state.
+
+IMPORTANT NOTE: The motility (v) parameter is multiplied by the velocity of 
+individual cells - e.g., if a cell has velocity (vx,vy), its overall velocity
+in the system is v*(vx,vy). Hence, it can be set to v = 1.0 if the velocity of 
+each cell has already been specified in the position file. 
+
+The second section should specify the observables to be dumped. The command to
+dump an observable roughly takes the following general format
+
+dump_obs freq file
+
+where obs is the observable to be dumped (e.g., cm for position and gyr for
+gyration), freq specifies how frequent the observable should be measured and
+dumped, and file is the file directory where the data will be stored. The
+exact format for dumping each observable is explained below in Appendix A1.
+
+The following is an example of the parameter file
+
+phi0 = 2.0
+M = 0.1
+R = 12.0
+kappa = 0.2
+alpha = 0.1
+mu = 6000.0
+Dr = 0.0001
+epsilon = 0.1
+cellLx = 41
+cellLy = 41
+lx = 160
+ly = 138
+ncells = 100
+nsteps = 10000
+nequil = 10000
+dt = 0.5
+v = 0.001200
+seed = 12345
+cm_file = cm.in
+shape_file = shape.in
+
+dump_cm 1000 0 main pos.dat
+dump_gyr 1000 0 main gyr.dat
+dump_field 10000 0 main field.dat
+dump_bulk_cm 1000 main pos-bulk.dat
+dump_shape 4 25 4.0 5 31 1000 0 main shape.dat
+dump_neighbour 1000 0 main neigh.dat
+dump_energy 1000 0 main energy.dat
+
+----------------------------------------
+
+d) Running the program with the parameter file
+
+With the position file, shape file, and parameter file prepared, one can start
+the simulation program by enter the command (assume running from the directory
+where the executable is stored (i.e., bin/exe/))
+
+    ./run_phase_field_model param_file
+
+where 'param_file' is the directory to the parameter file. 
+
+
+###############################################################################
+
+3. Automating the process to create the position file, shape file, and
+   parameter file
+
+As explained above, creating the position file, shape file, and parameter file
+can be tedious. Some scripts are provided in the src directory to automate 
+this process:
+
+phase_field_init.sh  A bash script that oversees the entire process of creating
+		     the position file, shape file, and the parameter file
+
+cell_position.py     A python script to generate the position of each cell on
+		     a triangular lattice. It also generates the velocity 
+		     components for each cell
+
+cell_shape.py	     A python script to create the initial local field 
+		     configuration of a cell
+
+params_template.txt  A template parameter file to be copied and modified using
+		     the bash script for a specific simulation run 
+   
+The driver script is phase_field_init.sh. One can change all the model 
+parameters in that file and the observables to be dumped in the simulation.
+The script is currently configured for studying the solid-fluid tranistion of
+active droplets/cells. The script is run as follows:
+
+./phase_field_init.sh deform peclet run run_dir
+
+where
+deform   deformability (d) of the cells
+peclet   the Peclet number (Pe) of the cells
+run      trial number
+run_dir  the directory where the simulation files should be stored
+
+Running this script generates a folder within the run_dir directory with the
+name 'cell_N_{N}_d_{d}_Pe_{pe}_run_{run}', where N is the number of cells.
+Three files are generated in this directory with the following names:
+
+cm_cell_N_{N}_d_{d}_Pe_{pe}_run_{run}.in       The position file
+shape_cell_N_{N}_d_{d}_Pe_{pe}_run_{run}.in    The shape file
+params_cell_N_{N}_d_{d}_Pe_{pe}_run_{run}.txt  The parameter file
+
+With these files, one can start the simulation by calling the main program
+
+<path to program>/run_phase_field_model params_cell_N_{N}_d_{d}_Pe_{pe}_run_{run}.txt
+
+
+###############################################################################
+
+A1. Dumping individual observables
+
+This section explains the command to be written in the parameter file for
+dumping individual observables. It also explains the output format for each
+observable measurement. For all observables, the following parameters must be
+specified:
+
+freq           The frequency for measuring and dumping the observable
+
+file	       The file directory where the observable data are to be stored
+
+{main,equil}   Whether to dump the observable during the main simulation run
+               or during equilibration. It is possible to do both. This
+	       requires writing the command twice, once with 'main' and the
+	       other with 'equil'.
+
+The following parameter is usually required:
+
+{0=append,1=overwrite}  Choosing 0 (append) makes the file to include data from
+			different timesteps. Choosing 1 (overwrite) makes the
+			file to only include the data from the last dumping
+			timestep. 
+
+----------------------------------------
+
+a) Position/centre of mass (cm) of each cell
+
+Command:
+
+dump_cm freq {0=append,1=overwrite} {main,equil} file
+
+Output format (for each timestep):
+
+Cells: number_of_cells
+Timestep: time
+x1 y1 ix1 iy1
+x2 y2 ix2 iy2
+...
+
+where xi, yi are the components of the centre of mass of cell i within the
+periodic boundary, and ixi and iyi are the counts that the cell has crossed
+the x and y boundary respectively (negative counts mean that the cell has
+crossed the lower-end boundary). Note that the positions are output in the
+order of the cell index.
+
+----------------------------------------
+
+b) Centre of mass of the entire system (bulk cm)
+
+Command:
+
+dump_bulk_cm {main,equil} file
+
+Output format:
+
+time x y
+
+----------------------------------------
+
+c) Gyration tensor components of each cell
+
+Command:
+
+dump_gyr freq {0=append,1=overwrite} {main,equil} file
+
+Output format (for each timestep):
+
+Cells: number_of_cells
+Timestep: time
+gxx1 gyy1 gxy1
+gxx2 gyy2 gxy2
+...
+
+where gxxi gyyi gxyi are the components of the gyration tensor for cell i. 
+
+----------------------------------------
+
+d) Total field
+
+Command:
+
+dump_field freq {0=separate,1=overwrite} {main,equil} file
+
+where specifying 0 (separate) results in a separate field file being created
+for each outputting timestep (with the timestep appended at the end of the
+filename), whereas specifying 1 results in only the field at the latest
+outputting timestep being stored.
+
+Output format:
+
+x y value
+
+----------------------------------------
+
+e) Index field
+
+This dump command analyses all the local cell fields to determine which cell
+has the highest density at each point of the full system. It generates a field
+based on the cell index associated with each point. 
+
+Command:
+
+dump_index_field freq {0=separate,1=overwrite} {main,equil} file
+
+where specifying 0 (separate) results in a separate field file being created
+for each outputting timestep (with the timestep appended at the end of the
+filename), whereas specifying 1 results in only the field at the latest
+outputting timestep being stored.
+
+Output format:
+
+x y index
+
+----------------------------------------
+
+f) Individual cell field
+
+Command:
+
+dump_cell_field cell_index freq {0=separate,1=overwrite} {main,equil} file
+
+where cell_index is the index of the cell, and specifying 0 (separate) results
+in a separate field file being created at each outputting timestep (with the
+timestep appended at the end of the filename), whereas specifying 1 results in
+only the field at the latest outputting timestep being stored.
+
+Output format:
+
+x y value
+
+----------------------------------------
+
+g) Nearest neighbours
+
+This command output the cell index of the nearest neighbours around each cell.
+
+Command:
+
+dump_neighbour freq {0=append,1=overwrite} {main,equil} file
+
+Output format:
+
+Cells: number_of_cells
+Timesteps: time
+nn11 nn12 ...
+nn21 nn22 ...
+...
+
+where nnij is the cell index of nearest neighbour j for cell i. Note that the
+number of nearest neighbours for each cell may not be the same in each
+timestep.
+
+----------------------------------------
+
+h) Energy
+
+This command outputs the individual contributions to the total free energy of
+the system. The total free energy F of the system is
+
+F = int_2d(sum_i=1^N(alpha/4*phi_i^2(phi_i-phi_0)^2 +
+    kappa/2*(grad(phi_i))^2)) + 
+    mu*(1-1/(pi*R^2*phi_0)*int_2d(phi_i^2) +
+    epsilon*int_2d(sum_(i<j=1)(phi_i^2*phi_j^2)
+
+Command:
+
+dump_energy freq {0=append,1=overwrite} {main,equil} file
+
+Output format:
+
+time alpha_energy kappa_energy volume_energy repulsion_energy total_energy
+
+where
+alpha_energy      The alpha term in the free energy functional
+kappa_energy      The kappa term in the free energy functional
+volume_energy     The volume constraint term in the free energy functional
+repulsion_energy  The pairwise repulsion term in the free energy functional
+total_energy      The total energy of the system
+
+----------------------------------------
+
+i) Overlap
+
+This command outputs the average local overlap of each cell. The local overlap
+for cell i is defined as
+
+chi_i(x) = sum_j=1^N H(phi_i(x)-phi_0/2)H(phi_j(x)-phi_0/2)
+
+where H(x) is the Heaviside step function. The average local overlap is defined
+as the average of this field across sites within the cell (i.e phi_i >
+phi_0/2), i.e. 
+
+chi_i = 1/A_i*sum_{x in Omega_i}(chi_i(x))
+
+where A_i and Omega_i are the number of pixels and the region within the cell.
+
+Command:
+
+dump_overlap freq {0=append,1=overwrite} {main,equil} file
+
+Output format:
+
+Cells: number_of_cells
+Timestep: time
+olap1
+olap2
+...
+
+where olapi is the average local overlap for cell i.
+
+----------------------------------------
+
+j) Overlap Field
+
+This command outputs the local overlap field for a particular cell.
+
+Command:
+
+dump_overlap_field cell_index freq {0=separate,1=overwrite} {main,equil} file
+
+where cell_index is the index of the cell, and specifying 0 (separate) results
+in a separate field file being created at each outputting timestep (with the
+timestep appended at the end of the filename), whereas specifying 1 results in
+only the field at the latest outputting timestep being stored.
+
+Output format:
+
+x y olap
+
+where olap is the amount of local overlap at site (x,y). 
+
+----------------------------------------
+
+k) Geometric properties of each cell
+
+This command outputs geometric properties such as area and perimeter of each
+cell.
+
+Command:
+
+dump_shape field_scale kernel_length kernel_sigma sgolay_degree sgolay_length freq {0=append,1=overwrite} {main,equil} file
+
+where
+field_scale    Integer factor for rescaling (enlarging) the local field for
+	       estimating the area and perimeter
+kernel_length  The size of the Gaussian kernel for smoothing the field
+kernel_sigma   The standard deviation/width of the Gaussian kernel
+sgolay_degree  The order of the polynomial used in the Savitzky–Golay filter
+	       for smoothing the curves for calculating area and perimeter
+sgolay_length  The window length of the filter
+
+Output format:
+
+Cells: number_of_cells
+Timestep: time
+p1 a1 cp1 pixa1 pix1
+p2 a2 cp2 pixa2 pix2
+...
+
+where pi and ai are the perimeter and area of cell i estimated based on the
+radial distance of the cell boundary from its centre, which requires using the
+Savitzky–Golay filter. cpi is the perimeter of the cell estimated based on the
+corner count algorithm by Proffitt and Rosen (Computer Graphics and Image
+Processing 20(4):347 1982). pixai is the area of the cell estimated from the
+number of pixels within the cell (i.e. based on the threshold phi > phi0/2) in
+the rescaled and smoothe field, whereas pixi is the actual number of pixels in
+the original local field that is within the cell. 
