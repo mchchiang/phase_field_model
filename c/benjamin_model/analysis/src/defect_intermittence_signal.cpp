@@ -1,4 +1,4 @@
-// defect_intermittence.cpp
+// defect_intermittence_signal.cpp
 // A program to determine if the defect signal is intermittence or not
 
 #include <iostream>
@@ -11,6 +11,7 @@
 using std::cout;
 using std::endl;
 using std::ifstream;
+using std::ofstream;
 using std::istringstream;
 using std::string;
 using std::vector;
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
   
   if (argc != 8) {
     cout << "usage: defect_intermittence startTime endTime timeInc"
-	 << "defectThres jumpThres timeThres neighDiffFile" << endl;
+	 << "defectThres timeThres neighDiffFile outFile" << endl;
     return 1;
   }
 
@@ -28,9 +29,9 @@ int main(int argc, char* argv[]) {
   long endTime {stol(string(argv[++argi]), nullptr, 10)};
   long timeInc {stol(string(argv[++argi]), nullptr, 10)};
   double defectThres {stod(string(argv[++argi]), nullptr)};
-  int jumpThres {stoi(string(argv[++argi]), nullptr, 10)};
   double timeThres {stod(string(argv[++argi]), nullptr)};
   string neighDiffFile {argv[++argi]};
+  string outFile {argv[++argi]};
   
   // Read the defect signal
   ifstream reader;
@@ -86,34 +87,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Count the number of jumps and duration in each state
-  int njumps {};
-  int nfluid {};
-  int nsolid {};
-  currentState = state[0];
-  if (currentState == 0) {
-    nsolid++;
-  } else {
-    nfluid++;
+  ofstream writer;
+  writer.open(outFile);
+  if (!writer) {
+    cout << "Problem with opening the output file!" << endl;
+    return 1;
   }
-  for (int i {1}; i < nbins; i++) {
-    prevState = currentState;
-    currentState = state[i];
-    if (prevState != currentState) {
-      njumps++;
-    }
-    if (currentState == 0) {
-      nsolid++;
-    } else {
-      nfluid++;
-    }
+  for (int i {}; i < nbins; i++) {
+    time = startTime+timeInc*i;
+    writer << time << " " << state[i] << endl;
   }
-  
-  if (njumps >= jumpThres) {
-    cout << 1 << endl;
-  } else if (nsolid >= nfluid) {
-    cout << 0 << endl;
-  } else {
-    cout << 2 << endl;
-  }
+  writer.close();
 }

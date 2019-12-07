@@ -27,17 +27,20 @@ N=100 # 100
 run=2
 tstart=1000000
 tend=21000000
+tinc=1000
 defect_thres=0.05
 jump_thres=2
-time_frac_thres=0.05
+time_thres=100000
 
-intermit_exe="../bin/exe/defect_intermittence"
-intermit_file="${out_dir}/intermit_cell_N_${N}_run_${run}.dat"
+intermit_exe="../bin/exe/defect_intermittence.2"
+#intermit_file="${out_dir}/intermit_cell_N_${N}_run_${run}.dat"
+intermit_file="intermit_cell_N_${N}_run_${run}.dat"
 > $intermit_file
 
 while (( $(bc <<< "$d < $d_end") ))
 do
-    in_path="${in_dir}/d_${d}/neighdiff"
+    #in_path="${in_dir}/d_${d}/neighdiff"
+    in_path="${in_dir}/d_${d}/neigh_delaunay"
     if [ -d $in_path ]; then
 	#out_path="${out_dir}/d_${d}/neighdiff"
 	#if [ ! -d $out_path ]; then
@@ -52,7 +55,7 @@ do
 		neighdiff_file="${in_path}/neighdiff_${name}.dat"
 		if [ -f $neighdiff_file ]; then
 		    echo "Doing d = $d Pe = $pe run = $run"
-		    data=$($intermit_exe $tstart $tend $out_file $defect_thres $jump_thres $time_frac_thres $neighdiff_file)
+		    data=$($intermit_exe $tstart $tend $tinc $defect_thres $jump_thres $time_thres $neighdiff_file)
 		    echo "$d $pe $data" >> $intermit_file
 		fi
 #	    done
