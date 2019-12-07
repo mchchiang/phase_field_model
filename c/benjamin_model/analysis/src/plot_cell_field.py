@@ -49,7 +49,7 @@ xbuff = 0.2*lx
 ybuff = 0.2*ly
 nframes = (tend-tstart)//tinc+1
 
-use_label = 1 # 1
+use_label = 0 # 1
 
 if (not make_movie):
     tend = tstart

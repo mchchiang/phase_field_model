@@ -49,7 +49,7 @@ do
 	    do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 		gyr_file="${in_path}/gyration/gyr_${name}.dat"
-		if [ -f $gyr_file]; then
+		if [ -f $gyr_file ]; then
 		    eccent_file="${out_path}/eccent/eccent_${name}.dat"
 		    cmd[$jobid]="$eccent_exe $N $tstart $tend $gyr_file $eccent_file"
 		    jobid=$(bc <<< "$jobid + 1")

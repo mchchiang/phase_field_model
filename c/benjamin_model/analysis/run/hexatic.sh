@@ -30,7 +30,7 @@ tstart=0
 tend=21000000
 tinc=1000
 
-max_jobs=4 # 8
+max_jobs=8 # 8
 cmd=()
 jobid=0
 
