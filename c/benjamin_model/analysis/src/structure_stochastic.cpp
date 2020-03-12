@@ -6,11 +6,11 @@
 #include <sstream>
 #include <iomanip>
 #include <string>
+#include <vector>
 #include <cmath>
 #include <random>
 #include <omp.h>
 #include "position.hpp"
-#include "array.hpp"
 
 using std::cout;
 using std::endl;
@@ -27,15 +27,14 @@ template <typename T> int sgn(T val);
 
 int main(int argc, char* argv[]) {
   
-  if (argc != 10) {
-    cout << "usage: structure npoints nqvec lx ly startTime endTime timeInc "
+  if (argc != 9) {
+    cout << "usage: structure npoints lx ly startTime endTime timeInc "
 	 << "posFile outFile" << endl;
     return 1;
   }
 
   int argi {};
   int npoints {stoi(string(argv[++argi]), nullptr, 10)};
-  int nqvec {stoi(string(argv[++argi]), nullptr, 10)};
   int lx {stoi(string(argv[++argi]), nullptr, 10)};
   int ly {stoi(string(argv[++argi]), nullptr, 10)};
   long startTime {stoi(string(argv[++argi]), nullptr, 10)};
@@ -53,7 +52,10 @@ int main(int argc, char* argv[]) {
 
   // Read the position data
   int nbins {static_cast<int>((endTime-startTime)/timeInc)+1};
-  double*** pos {create3DDoubleArray(nbins, npoints, 2)};
+  vector<double> vec (2, 0.0);
+  vector<vector<double> > vec2 (npoints, vec);
+  vector<vector<vector<double> > >* pos 
+  {new vector<vector<vector<double > > >(nbins, vec2)};
   long time;
   int ibin;
   while (posReader.nextFrame()) {
@@ -65,8 +67,8 @@ int main(int argc, char* argv[]) {
       for (int i {}; i < npoints; i++) {
 	// Use wrapped position here as we only care about relative distances
 	// and orientations
-	pos[ibin][i][0] = posReader.getPosition(i, 0);
-	pos[ibin][i][1] = posReader.getPosition(i, 1);
+	(*pos)[ibin][i][0] = posReader.getPosition(i, 0);
+	(*pos)[ibin][i][1] = posReader.getPosition(i, 1);
       }
     } else {
       break;
@@ -82,6 +84,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Computing the structure factor
+  const int nqvec {1000};
   double twopi {2.0*M_PI};
   double R {8.0};
   double qxmin {-twopi/R};
@@ -90,66 +93,64 @@ int main(int argc, char* argv[]) {
   double qymax {twopi/R};
   double qlx {qxmax-qxmin};
   double qly {qymax-qymin};
-  double qxinc {qlx/static_cast<double>(nqvec)};
-  double qyinc {qly/static_cast<double>(nqvec)};
-  double qx, qy, sq;
-
-  double*** diffMat {create3DDoubleArray(npoints, npoints, 2)};
-  double** structFact {create2DDoubleArray(nqvec, nqvec)};
-  double x, y, prod;
-  
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> rand(0.0, 1.0);
+  vector<vector<double> > diffVec (npoints, vec);
+  vector<vector<vector<double> > >* diffMat
+  {new vector<vector<vector<double> > >(npoints, diffVec)};
+  vector<vector<double> > qvec (nqvec, vec);
+  vector<double> structFact (nqvec, 0.0);
+  double r, x, y, prod;
+  int i, j, k;
   for (ibin = 0; ibin < nbins; ibin++) {
-    cout << "Doing t = " << (startTime+timeInc*ibin) << endl;
-    // Compute the separation between points
-    for (int i = 0; i < npoints; i++) {
-      x = pos[ibin][i][0];
-      y = pos[ibin][i][1];	
-      for (int j = 0; j < i; j++) {
-	diffMat[i][j][0] = diff(lx, x, pos[ibin][j][0]);
-	diffMat[i][j][1] = diff(ly, y, pos[ibin][j][1]);
+    // cout << "Doing bin " << ibin << endl;
+    // Generate the random q vectors
+    for (i = 0; i < nqvec; i++) {
+      r = rand(mt);
+      qvec[i][0] = qxmin+qlx*r;
+      r = rand(mt);
+      qvec[i][1] = qymin+qly*r;
+    }
+
+    for (i = 0; i < npoints; i++) {
+      x = (*pos)[ibin][i][0];
+      y = (*pos)[ibin][i][1];	
+      for (j = 0; j < i; j++) {
+	(*diffMat)[i][j][0] = diff(lx, x, (*pos)[ibin][j][0]);
+	(*diffMat)[i][j][1] = diff(ly, y, (*pos)[ibin][j][1]);
       }
     }
       
-#pragma omp parallel default(none),\
-  shared(diffMat, qxmin, qymin, qxinc, qyinc, nqvec, npoints, structFact),\
-  private(qx, qy, sq, prod)
+#pragma omp parallel default(none),			\
+  shared(diffMat, qvec, structFact, npoints),		\
+  private(i, j, k, prod)
     {
-#pragma omp for schedule(static) collapse(2)
-      for (int i = 0; i < nqvec; i++) {
-	for (int j = 0; j < nqvec; j++) {
-	  qx = qxmin+qxinc*(i+0.5);
-	  qy = qymin+qyinc*(j+0.5);
-	  sq = 0.0;
-	  for (int k = 0; k < npoints; k++) {
-	    for (int l = 0; l < k; l++) {
-	      prod = dot(qx, qy, diffMat[k][l][0], diffMat[k][l][1]);
-	      sq += cos(prod);
-	    }
+#pragma omp for schedule(static)
+      for (i = 0; i < nqvec; i++) {
+	structFact[i] = 0.0;
+	for (j = 0; j < npoints; j++) {
+	  for (k = 0; k < j; k++) {
+	    prod = dot(qvec[i][0], qvec[i][1], 
+		       (*diffMat)[j][k][0], (*diffMat)[j][k][1]);
+	    structFact[i] += cos(prod);
 	  }
-	  sq = sq*2.0/npoints+1.0;
-	  structFact[i][j] += sq;
 	}
+	structFact[i] = structFact[i]*2.0/npoints+1.0;
       }
     }
-  }
-  
-  // Normalise and output results
-  writer << std::setprecision(10) << std::fixed;
-  for (int i = 0; i < nqvec; i++) {
-    for (int j = 0; j < nqvec; j++) {
-      structFact[i][j] /= static_cast<double>(nbins);
-      qx = qxmin+qxinc*(i+0.5);
-      qy = qymin+qyinc*(j+0.5);
-      writer << qx << " " << qy << " " << structFact[i][j] << "\n";
+    
+    // Output the points
+    for (i = 0; i < nqvec; i++) {
+      writer << qvec[i][0] << " " << qvec[i][1] << " " 
+	     << structFact[i] << endl;
     }
-    writer << "\n"; 
   }
   writer.close();
 
   // Clean up resources
-  free(pos);
-  free(diffMat);
-  free(structFact);
+  delete pos;
+  delete diffMat;
 }
 
 double diff(double lx, double x1, double x2) {

@@ -13,20 +13,22 @@ import numpy as np
 from scipy.spatial import Delaunay
 
 args = sys.argv
-if (len(args) != 9):
-    print("usage: neigh_delaunay.py npoints lx ly tstart tend tinc pos_file out_file")
+if (len(args) != 11):
+    print("usage: neigh_delaunay.py npoints lx ly xbuff ybuff tstart tend tinc pos_file out_file")
     sys.exit(1)
 
 npoints = int(args.pop(1))
 lx = int(args.pop(1))
 ly = int(args.pop(1))
+xbuff = float(args.pop(1))
+ybuff = float(args.pop(1))
 tstart = int(args.pop(1))
 tend = int(args.pop(1))
 tinc = int(args.pop(1))
 pos_file = args.pop(1)
 out_file = args.pop(1)
-xbuff = 0.2*lx
-ybuff = 0.2*ly
+xbuff *= lx
+ybuff *= ly
 nframes = int((tend-tstart)//tinc+1)
 
 periodic_loc = [(lx,-ly),(lx,0),(lx,ly),(0,-ly),(0,ly),(-lx,-ly),
@@ -38,7 +40,7 @@ reader = open(pos_file, 'r')
 writer = open(out_file, 'w')
 
 while True:
-    # Read header sectoin (inlcuding time info)
+    # Read header section (including time info)
     for i in range(2):
         line = reader.readline()
     if (not line): break

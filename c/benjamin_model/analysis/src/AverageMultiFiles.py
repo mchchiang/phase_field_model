@@ -67,7 +67,8 @@ for rows in izip(*files):
             error = sigma / math.sqrt(n)
         
         if (ref_col == -1):
-            output = "%.5f %.5f %.5f\n" % (avg, sigma,  error)
+            output = "%.5e %.5e %.5e\n" % (avg, sigma,  error)
+#            output = "%.5f %.5f %.5f\n" % (avg, sigma,  error)
         else:
             output = "%.5f %.5f %.5f %.5f\n" % (ref, avg, sigma,  error)
         writer.write(output)

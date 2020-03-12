@@ -9,6 +9,10 @@ import scipy.stats
 import math
 
 def read_array(filename, array, index_col, value_col):
+    if (len(array) == 0):
+        append = True
+    else:
+        append = False
     with open(filename, 'r') as f:
         index = 0
         for line in f:
@@ -19,6 +23,8 @@ def read_array(filename, array, index_col, value_col):
             if (index_col != -1):
                 index = int(data[index_col])                
                 array[index] = value
+            elif (append):
+                array.append(value)
             else:
                 array[index] = value
                 index += 1 

@@ -1,6 +1,7 @@
 // overlap_defect_corr.cpp
 // A program to compute the hexatic order parameter
 
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -9,6 +10,7 @@
 #include <vector>
 #include <cmath>
 #include "position.hpp"
+#include "array.hpp"
 
 using std::cout;
 using std::endl;
@@ -34,10 +36,10 @@ struct Defect {
 
 int main(int argc, char* argv[]) {
   
-  if (argc != 16) {
+  if (argc != 17) {
     cout << "usage: overlap_defect_corr npoints lx ly cellLx cellLy startTime "
-	 << "endTime timeInc fieldTimeInc posFile neighFile fieldFileRoot "
-	 << "olapAllFile olapNegDefectFile olapPosDefectFile" 
+	 << "endTime timeInc fieldTimeInc posFile neighFile fieldFileDir "
+	 << "fieldFileName olapAllFile olapNegDefectFile olapPosDefectFile" 
 	 << endl;
     return 1;
   }
@@ -54,7 +56,8 @@ int main(int argc, char* argv[]) {
   long fieldTimeInc {stoi(string(argv[++argi]), nullptr, 10)};
   string posFile {argv[++argi]};
   string neighFile {argv[++argi]};
-  string fieldFileRoot {argv[++argi]};
+  string fieldFileDir {argv[++argi]};
+  string fieldFileName {argv[++argi]};
   string olapAllFile {argv[++argi]};
   string olapNegDefectFile {argv[++argi]};
   string olapPosDefectFile {argv[++argi]};
@@ -68,10 +71,7 @@ int main(int argc, char* argv[]) {
 
   // Read the position data
   int nbins {static_cast<int>((endTime-startTime)/fieldTimeInc)+1};
-  vector<double> vec (2, 0.0);
-  vector<vector<double> > vec2 (npoints, vec);
-  vector<vector<vector<double> > >* pos 
-  {new vector<vector<vector<double > > >(nbins, vec2)};
+  double*** pos {create3DDoubleArray(nbins, npoints, 2)};
   long time;
   int ibin;
   while (posReader.nextFrame()) {
@@ -85,8 +85,8 @@ int main(int argc, char* argv[]) {
       for (int i {}; i < npoints; i++) {
 	// Use wrapped position here as we only care about relative distances
 	// and orientations
-	(*pos)[ibin][i][0] = posReader.getPosition(i, 0);
-	(*pos)[ibin][i][1] = posReader.getPosition(i, 1);
+	pos[ibin][i][0] = posReader.getPosition(i, 0);
+	pos[ibin][i][1] = posReader.getPosition(i, 1);
       }
     }
   }
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
 	    count++;
 	  }
 	  if ((count-6) != 0) {
-	    Defect d {(*pos)[ibin][n][0],(*pos)[ibin][n][1], n, count-6};
+	    Defect d {pos[ibin][n][0], pos[ibin][n][1], n, count-6};
 	    (*defects)[ibin].push_back(d);
 	  }
 	}
@@ -144,19 +144,17 @@ int main(int argc, char* argv[]) {
   // Read cell phase fields
   ostringstream oss;
   ifstream fieldReader;
-  double x, y, phi;
+  double phi;
   double xavg, yavg, mass;
-  vector<double> field1D (cellLy, 0.0);
-  vector<vector<double> > field2D (cellLx, field1D);
-  vector<vector<vector<double> > >* localFields
-  {new vector<vector<vector<double> > >(npoints, field2D)};
-  vector<vector<double> >* pos0 {new vector<vector<double> >(npoints, vec)};
+  double*** localFields {create3DDoubleArray(npoints, cellLx, cellLy)};
+  int** pos0 {create2DIntArray(npoints, 2)};
   double positiveDefectOlapAvg {};
   double negativeDefectOlapAvg {};
   double totalOlapAvg {};
   double numOfPoints {};
   double numOfPositiveDefects {};
   double numOfNegativeDefects {};
+  int x, y;
 
   ofstream olapAllWriter, olapNegDefectWriter, olapPosDefectWriter;
   olapAllWriter.open(olapAllFile);
@@ -183,7 +181,8 @@ int main(int argc, char* argv[]) {
     for (int n {}; n < npoints; n++) {
       oss.str("");
       oss.clear();
-      oss << fieldFileRoot << "cell_" << n << ".dat." << time;
+      oss << fieldFileDir << "/cell_" << n << "/" 
+	  << fieldFileName << "cell_" << n << ".dat." << time;
       fieldReader.open(oss.str());
       if (!fieldReader) {
 	cout << "Problem with opening the file: " << oss.str() << endl;
@@ -198,7 +197,7 @@ int main(int argc, char* argv[]) {
 	iss.clear();
 	iss.str(line);
 	iss >> x >> y >> phi;
-	(*localFields)[n][x][y] = phi;
+	localFields[n][x][y] = phi;
 	xavg += (phi*(x+0.5));
 	yavg += (phi*(y+0.5));
 	mass += phi;
@@ -211,10 +210,10 @@ int main(int argc, char* argv[]) {
 	yavg = 0.0;
       }
       // Determine top left coordinates of the cell
-      x = wrap(lx, static_cast<int>(round((*pos)[ibin][n][0]-xavg)));
-      y = wrap(ly, static_cast<int>(round((*pos)[ibin][n][1]-yavg)));
-      (*pos0)[n][0] = x;
-      (*pos0)[n][1] = y;
+      x = wrap(lx, static_cast<int>(round(pos[ibin][n][0]-xavg)));
+      y = wrap(ly, static_cast<int>(round(pos[ibin][n][1]-yavg)));
+      pos0[n][0] = x;
+      pos0[n][1] = y;
       fieldReader.close();
     }
     
@@ -222,7 +221,7 @@ int main(int argc, char* argv[]) {
     int xn, yn;
     double olapAvg;
     double x0m, y0m, x0n, y0n, dx0mn, dy0mn;
-    double phim, phin, prod, area;
+    double phim, phin, area;
     vector<double> olap (npoints, 0.0);
     for (int m {}; m < npoints; m++) {
       olapAvg = 0.0;
@@ -230,33 +229,31 @@ int main(int argc, char* argv[]) {
       // Compute the area of the cell
       for (int i {}; i < cellLx; i++) {
 	for (int j {}; j < cellLy; j++) {
-	  if ((*localFields)[m][i][j] < 1.0) continue;
+	  if (localFields[m][i][j] < 1.0) continue;
 	  area += 1.0;
 	}
       }
-      x0m = (*pos0)[m][0];
-      y0m = (*pos0)[m][1];
+      x0m = pos0[m][0];
+      y0m = pos0[m][1];
       // Consider pairwise overlap
       for (int n {}; n < npoints; n++) {
 	if (m == n) continue; // Ignore self overlap
-	x0n = (*pos0)[n][0];
-	y0n = (*pos0)[n][1];
+	x0n = pos0[n][0];
+	y0n = pos0[n][1];
 	dx0mn = diff(lx, x0m, x0n);
 	dy0mn = diff(ly, y0m, y0n);
-	if (abs(dx0mn) > lx || abs(dy0mn) > ly) continue;
+	if (abs(dx0mn) > cellLx || abs(dy0mn) > cellLy) continue;
 	for (int i {}; i < cellLx; i++) {
 	  xn = dx0mn+i;
 	  if (xn < 0 || xn >= cellLx) continue;
 	  for (int j {}; j < cellLy; j++) {
-	    phim = (*localFields)[m][i][j];
+	    phim = localFields[m][i][j];
 	    if (phim < 1.0) continue;
-	    phim = 1.0; 
 	    yn = dy0mn+j;
 	    if (yn < 0 || yn >= cellLy) continue;
-	    phin = (*localFields)[n][xn][yn];
-	    phin = phin < 1.0 ? 0.0 : 1.0;
-	    prod = phim*phin;
-	    olapAvg += prod;
+	    phin = localFields[n][xn][yn];
+	    if (phin < 1.0) continue;
+	    olapAvg += 1.0;
 	  }
 	} // Close loop over local field of phi_m
       } // Close loop over all other cell n
@@ -294,10 +291,10 @@ int main(int argc, char* argv[]) {
        << negativeDefectOlapAvg << endl;
 
   // Clean up resources
-  delete pos;
-  delete pos0;
+  free(pos);
+  free(pos0);
+  free(localFields);
   delete defects;
-  delete localFields;
 }
 
 double dist(double x, double y) {

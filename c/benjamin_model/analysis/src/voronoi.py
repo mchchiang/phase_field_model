@@ -21,13 +21,15 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
 args = sys.argv
-if (len(args) != 20):
-    print("usage: voronoi.py npoints lx ly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen pos_file data_file out_file")
+if (len(args) != 22):
+    print("usage: voronoi.py npoints lx ly xbuff ybuff Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen pos_file data_file out_file")
     sys.exit(1)
 
 npoints = int(args.pop(1))
 lx = int(args.pop(1))
 ly = int(args.pop(1))
+xbuff = float(args.pop(1))
+ybuff = float(args.pop(1))
 Dr = float(args.pop(1))
 dt = float(args.pop(1))
 data_col = int(args.pop(1))
@@ -44,8 +46,8 @@ print_to_screen = bool(int(args.pop(1)))
 pos_file = args.pop(1)
 data_file = args.pop(1)
 out_file = args.pop(1)
-xbuff = 0.2*lx
-ybuff = 0.2*ly
+xbuff *= lx
+ybuff *= ly
 nframes = int((tend-tstart)//tinc+1)
 
 use_label = 0 # 1
@@ -196,7 +198,7 @@ def plot_data(frame):
             colors.append(mapper.to_rgba(
                 data_val[frame][index_map[frame][r]]))
         else:
-            colours.append(mapper.to_rgba(index_map[frame][r]))
+            colors.append(mapper.to_rgba(index_map[frame][r]))
     plt_polygons.set_paths(polygons)
     plt_polygons.set_facecolor(colors)
     plt_polygons.set_edgecolor("black")

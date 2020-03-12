@@ -1,3 +1,4 @@
+#!/bin/env python3
 # plot_cell_field.py
 
 import sys
@@ -19,8 +20,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
 args = sys.argv
-if (len(args) != 23):
-    print("usage: plot_cell_field.py npoints lx ly clx cly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen fileroot pos_file data_file out_file")
+if (len(args) != 24):
+    print("usage: plot_cell_field.py npoints lx ly clx cly Dr dt data_col data_min data_max tic_start tic_end tic_inc tstart tend tinc make_movie print_to_screen field_file_dir field_file_name pos_file data_file out_file")
     sys.exit(1)
 
 npoints = int(args.pop(1))
@@ -41,7 +42,8 @@ tend = int(args.pop(1))
 tinc = int(args.pop(1))
 make_movie = bool(int(args.pop(1)))
 print_to_screen = bool(int(args.pop(1)))
-fileroot = args.pop(1)
+field_file_dir = args.pop(1)
+field_file_name = args.pop(1)
 pos_file = args.pop(1)
 data_file = args.pop(1)
 out_file = args.pop(1)
@@ -49,7 +51,7 @@ xbuff = 0.2*lx
 ybuff = 0.2*ly
 nframes = (tend-tstart)//tinc+1
 
-use_label = 0 # 1
+use_label = 1 # 1
 
 if (not make_movie):
     tend = tstart
@@ -95,7 +97,8 @@ periodic_loc = [(lx,-ly),(lx,0),(lx,ly),(0,-ly),(0,0),(0,ly),(-lx,-ly),
 # Read cell field data
 def read_field(index, frame, time):
     global fileroot
-    filename = fileroot + ("cell_{:d}.dat.{:d}".format(index, time))
+    filename = field_file_dir + ("/cell_{:d}/".format(index)) + \
+               field_file_name + ("cell_{:d}.dat.{:d}".format(index, time))
     with open(filename,'r') as field_reader:
         # For computing the local field centre of mass
         xavg = 0.0
@@ -109,7 +112,7 @@ def read_field(index, frame, time):
             j = int(data[1])
             phi = float(data[2])
             local_field[i,j] = phi
-            xavg += (phi*(i+0.5)) # Uset the centre of a lattice element
+            xavg += (phi*(i+0.5)) # Use the centre of a lattice element
             yavg += (phi*(j+0.5))
             mass += phi
         if (mass > 0.0):
@@ -185,12 +188,13 @@ if (data_col >= 0):
     
 # Make animation
 # Plot settings
-fontsize = 14
+fontsize = 14 #20
 norm = mpl.colors.Normalize(vmin=data_min, vmax=data_max, clip=True)
 mapper = mplcm.ScalarMappable(norm=norm, cmap=mplcm.RdYlBu_r)
 mapper.set_array([])
 
 fig, ax = plt.subplots()
+ax.axis('equal') # For maintaining aspect ratio
 ax.set_xlim([0,lx])
 ax.set_ylim([0,ly])
 #cbar = plt.colorbar(mapper)
