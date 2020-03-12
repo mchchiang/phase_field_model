@@ -23,14 +23,24 @@ fi
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=100 # 100
+N=400 # 100
+tstart=0
+tend=21000000
+
+max_jobs=8 # 8
+cmd=()
+jobid=0
+
+neigh_exe="../bin/exe/neigh_diff"
 
 while (( $(bc <<< "$d < $d_end") ))
 do
     #in_path="${in_dir}/d_${d}/neighbour"
     in_path="${in_dir}/d_${d}/neigh_delaunay"
+    #in_path=$in_dir
     if [ -d $in_path ]; then
 	out_path="${out_dir}/d_${d}/neigh_delaunay"
+	#out_path=$out_dir
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi
@@ -44,8 +54,8 @@ do
 		if [ -f $neigh_file ]; then
 		    echo "Doing d = $d Pe = $pe run = $run"
 		    neighdiff_file="${out_path}/neighdiff_${name}.dat"
-		    awk -v ncells="$N" 'function abs(v) {return v < 0 ? -v : v} BEGIN {a = 0.0; a2 = 0.0; n = 0; time = 0}{if((NR-1)%(ncells+2)==1){time = $2};if((NR-1)%(ncells+2)>=2){a+=abs(NF-6.0);n+=1};if(n == ncells){print time,a/n;n=0;a=0.0}}' $neigh_file > $neighdiff_file
-#		    awk 'function abs(v) {return v < 0 ? -v : v} BEGIN {a = 0.0; a2 = 0.0; n = 0; time = 0}{if((NR-1)%102==1){time = $2};if((NR-1)%102>=2){d=abs(NF-6.0);a+=d; a2+=d*d;n+=1};if(n == 100){a=a/n; a2=a2/n; avg=a; stdev=sqrt((a2-a*a)*n/(n-1.0)); stderr=stdev/sqrt(n); print time,avg,stdev,stderr;n=0;a=0.0;a2=0.0}}' $neigh_file > $neighdiff_file
+		    cmd[$jobid]="$neigh_exe $N $tstart $tend $neigh_file $neighdiff_file"
+		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done
 	    pe=$(python -c "print '%.3f' % ($pe + $pe_inc)")
@@ -53,3 +63,20 @@ do
     fi
     d=$(python -c "print '%.3f' % ($d + $d_inc)")
 done
+
+# Parallel runs
+
+total_jobs=$jobid
+jobid=0
+
+while (( $(bc <<< "$jobid < $total_jobs") ))
+do
+    for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++))
+    do
+	echo "${cmd[jobid]} &"
+	${cmd[jobid]} &
+	jobid=$(bc <<< "$jobid + 1")
+    done
+    wait
+done
+

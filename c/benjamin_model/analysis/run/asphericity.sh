@@ -25,7 +25,7 @@ pe=$(python -c "print '%.3f' % ($pe_start)")
 
 asphere_exe="../bin/exe/asphericity"
 
-N=100 # 100
+N=36 # 100
 tstart=0
 tend=21000000
 tinc=1000

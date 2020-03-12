@@ -12,7 +12,7 @@ in_dir=${10}
 out_dir=${11}
 
 if [ "$#" != 11 ]; then
-    echo "usage: hexatic.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
+    echo "usage: neighbour_change.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
     exit 1
 fi
 
@@ -23,23 +23,23 @@ fi
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-hex_exe="../bin/exe/hexatic"
+neigh_exe="../bin/exe/neighbour_change"
 
 N=100 #100
-tstart=0
+tstart=1000
 tend=21000000
 tinc=1000
 
-max_jobs=4 # 8
+max_jobs=8 # 8
 cmd=()
 jobid=0
 
 while (( $(bc <<< "$d < $d_end") ))
 do
-    in_path="${in_dir}/d_${d}/"
+    in_path="${in_dir}/d_${d}/neigh_delaunay/"
     if [ -d $in_path ]; then
 	#out_path="${out_dir}/d_${d}/hexatic/"
-	out_path="${out_dir}/d_${d}/hexatic_delaunay/"
+	out_path="${out_dir}/d_${d}/neigh_delaunay/"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi
@@ -49,16 +49,12 @@ do
 	    for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	    do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
-		pos_file="${in_path}/position/pos_${name}.dat"
-		if [ -f $pos_file ]; then
-		    #neigh_file="${in_path}/neighbour/neigh_${name}.dat"
-		    neigh_file="${in_path}/neigh_delaunay/neigh_${name}.dat"
-		    params_file="${in_path}/siminfo/params_${name}.txt"
-		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
-		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
-		    hex_cell_file="${out_path}/hexatic-cell_${name}.dat"
-		    hex_file="${out_path}/hexatic_${name}.dat"
-		    cmd[$jobid]="$hex_exe $N $lx $ly $tstart $tend $tinc $pos_file $neigh_file $hex_cell_file $hex_file"
+		#neigh_file="${in_path}/neighbour/neigh_${name}.dat"
+		neigh_file="${in_path}/neigh_${name}.dat"
+		if [ -f $neigh_file ]; then
+		    echo "Doing d = $d Pe = $pe run = $run"
+		    out_file="${out_path}/neigh-change_${name}.dat"
+		    cmd[$jobid]="$neigh_exe $N $tstart $tend $tinc $neigh_file $out_file"
 		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done

@@ -12,7 +12,7 @@ in_dir=${10}
 out_dir=${11}
 
 if [ "$#" != 11 ]; then
-    echo "usage: hexatic.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
+    echo "usage: overlap_defect_corr.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
     exit 1
 fi
 
@@ -23,23 +23,25 @@ fi
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-hex_exe="../bin/exe/hexatic"
+olap_exe="../bin/exe/overlap_defect_corr"
 
 N=100 #100
-tstart=0
+tstart=1000000
 tend=21000000
 tinc=1000
+ftinc=10000
 
-max_jobs=4 # 8
+max_jobs=8 # 8
 cmd=()
 jobid=0
 
 while (( $(bc <<< "$d < $d_end") ))
 do
-    in_path="${in_dir}/d_${d}/"
+    #in_path="${in_dir}/d_${d}/"
+    in_path="${in_dir}"
     if [ -d $in_path ]; then
-	#out_path="${out_dir}/d_${d}/hexatic/"
-	out_path="${out_dir}/d_${d}/hexatic_delaunay/"
+	#out_path="${out_dir}/d_${d}/local_overlap/"
+	out_path="${out_dir}/local_overlap_2"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi
@@ -51,14 +53,19 @@ do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 		pos_file="${in_path}/position/pos_${name}.dat"
 		if [ -f $pos_file ]; then
-		    #neigh_file="${in_path}/neighbour/neigh_${name}.dat"
 		    neigh_file="${in_path}/neigh_delaunay/neigh_${name}.dat"
 		    params_file="${in_path}/siminfo/params_${name}.txt"
 		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
 		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
-		    hex_cell_file="${out_path}/hexatic-cell_${name}.dat"
-		    hex_file="${out_path}/hexatic_${name}.dat"
-		    cmd[$jobid]="$hex_exe $N $lx $ly $tstart $tend $tinc $pos_file $neigh_file $hex_cell_file $hex_file"
+		    clx=$(grep 'cellLx = ' $params_file | awk '{print $3}')
+		    cly=$(grep 'cellLy = ' $params_file | awk '{print $3}')
+		    field_path="${in_path}/cell_field/"
+		    field_file="cell-field_${name}_"
+		    olap_all_file="${out_path}/local-overlap-all_${name}.dat"
+		    olap_neg_file="${out_path}/local-overlap-neg_${name}.dat"
+		    olap_pos_file="${out_path}/local-overlap-pos_${name}.dat"
+		    olap_log_file="${out_path}/local-overlap-log_${name}.dat"
+		    cmd[$jobid]="$olap_exe $N $lx $ly $clx $cly $tstart $tend $tinc $ftinc $pos_file $neigh_file $field_path $field_file $olap_all_file $olap_neg_file $olap_pos_file"
 		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done

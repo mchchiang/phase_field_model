@@ -12,7 +12,7 @@ in_dir=${10}
 out_dir=${11}
 
 if [ "$#" != 11 ]; then
-    echo "usage: hexatic.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
+    echo "usage: structure.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
     exit 1
 fi
 
@@ -23,23 +23,27 @@ fi
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-hex_exe="../bin/exe/hexatic"
+struct_exe="../bin/exe/structure"
 
 N=100 #100
-tstart=0
+tstart=1000000
 tend=21000000
 tinc=1000
+nqvec=200
 
-max_jobs=4 # 8
+max_jobs=1 # 8
+#nthreads=64
 cmd=()
 jobid=0
+
+#export OMP_NUM_THREADS=$nthreads
 
 while (( $(bc <<< "$d < $d_end") ))
 do
     in_path="${in_dir}/d_${d}/"
     if [ -d $in_path ]; then
 	#out_path="${out_dir}/d_${d}/hexatic/"
-	out_path="${out_dir}/d_${d}/hexatic_delaunay/"
+	out_path="${out_dir}/d_${d}/structure/"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi
@@ -51,14 +55,11 @@ do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
 		pos_file="${in_path}/position/pos_${name}.dat"
 		if [ -f $pos_file ]; then
-		    #neigh_file="${in_path}/neighbour/neigh_${name}.dat"
-		    neigh_file="${in_path}/neigh_delaunay/neigh_${name}.dat"
 		    params_file="${in_path}/siminfo/params_${name}.txt"
 		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
 		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
-		    hex_cell_file="${out_path}/hexatic-cell_${name}.dat"
-		    hex_file="${out_path}/hexatic_${name}.dat"
-		    cmd[$jobid]="$hex_exe $N $lx $ly $tstart $tend $tinc $pos_file $neigh_file $hex_cell_file $hex_file"
+		    struct_file="${out_path}/struct_${name}.dat"
+		    cmd[$jobid]="$struct_exe $N $nqvec $lx $ly $tstart $tend $tinc $pos_file $struct_file"
 		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done

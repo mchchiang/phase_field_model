@@ -30,15 +30,20 @@ tstart=0
 tend=21000000
 tinc=1000
 
-max_jobs=8 # 8
+xbuff=0.5
+ybuff=0.5
+
+max_jobs=4 # 8
 cmd=()
 jobid=0
 
 while (( $(bc <<< "$d < $d_end") ))
 do
     in_path="${in_dir}/d_${d}/"
+#    in_path="${in_dir}/"
     if [ -d $in_path ]; then
 	out_path="${out_dir}/d_${d}/neigh_delaunay/"
+#	out_path="${out_dir}/neigh_delaunay_2/"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi
@@ -54,7 +59,7 @@ do
 		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
 		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
 		    neigh_file="${out_path}/neigh_${name}.dat"
-		    cmd[$jobid]="python3 $neigh_py $N $lx $ly $tstart $tend $tinc $pos_file $neigh_file"
+		    cmd[$jobid]="python3 $neigh_py $N $lx $ly $xbuff $ybuff $tstart $tend $tinc $pos_file $neigh_file"
 		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done

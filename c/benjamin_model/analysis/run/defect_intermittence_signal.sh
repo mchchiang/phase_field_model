@@ -12,34 +12,37 @@ in_dir=${10}
 out_dir=${11}
 
 if [ "$#" != 11 ]; then
-    echo "usage: hexatic.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
+    echo "usage: defect_intermittence_signal.sh d_start d_end d_inc pe_start pe_end pe_inc run_start run_end run_inc in_dir out_dir"
     exit 1
 fi
 
-if [ ! -d $outdir ]; then
-    mkdir -p $outdir
+if [ ! -d $out_dir ]; then
+    mkdir -p $out_dir
 fi
 
 d=$(python -c "print '%.3f' % ($d_start)")
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-hex_exe="../bin/exe/hexatic"
-
-N=100 #100
-tstart=0
+N=36 # 100
+tstart=1000000
 tend=21000000
 tinc=1000
+defect_thres=0.1 #0.05
+jump_thres=2
+time_thres=100000
 
-max_jobs=4 # 8
+intermit_exe="../bin/exe/defect_intermittence_signal"
+
+max_jobs=8 # 8
 cmd=()
 jobid=0
 
 while (( $(bc <<< "$d < $d_end") ))
 do
-    in_path="${in_dir}/d_${d}/"
+    #in_path="${in_dir}/d_${d}/neighdiff"
+    in_path="${in_dir}/d_${d}/neigh_delaunay"
     if [ -d $in_path ]; then
-	#out_path="${out_dir}/d_${d}/hexatic/"
-	out_path="${out_dir}/d_${d}/hexatic_delaunay/"
+	out_path="${out_dir}/d_${d}/intermit/"
 	if [ ! -d $out_path ]; then
 	    mkdir -p $out_path
 	fi
@@ -49,16 +52,11 @@ do
 	    for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	    do
 		name="cell_N_${N}_d_${d}_Pe_${pe}_run_${run}"
-		pos_file="${in_path}/position/pos_${name}.dat"
-		if [ -f $pos_file ]; then
-		    #neigh_file="${in_path}/neighbour/neigh_${name}.dat"
-		    neigh_file="${in_path}/neigh_delaunay/neigh_${name}.dat"
-		    params_file="${in_path}/siminfo/params_${name}.txt"
-		    lx=$(grep 'lx = ' $params_file | awk '{print $3}')
-		    ly=$(grep 'ly = ' $params_file | awk '{print $3}')
-		    hex_cell_file="${out_path}/hexatic-cell_${name}.dat"
-		    hex_file="${out_path}/hexatic_${name}.dat"
-		    cmd[$jobid]="$hex_exe $N $lx $ly $tstart $tend $tinc $pos_file $neigh_file $hex_cell_file $hex_file"
+		neighdiff_file="${in_path}/neighdiff_${name}.dat"
+		if [ -f $neighdiff_file ]; then
+		    out_file="${out_path}/intermit_${name}.dat"
+		    echo "Doing d = $d Pe = $pe run = $run"
+		    cmd[$jobid]="$intermit_exe $tstart $tend $tinc $defect_thres $time_thres $neighdiff_file $out_file"
 		    jobid=$(bc <<< "$jobid + 1")
 		fi
 	    done

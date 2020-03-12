@@ -26,7 +26,7 @@ d=$(python -c "print '%.3f' % ($d_start)")
 d_old=$d
 pe=$(python -c "print '%.3f' % ($pe_start)")
 
-N=100 # 100
+N=400 # 100
 tstart=5000000
 tend=15000000
 
@@ -83,7 +83,7 @@ fit [${tmin}:${tmax}] f(x) '${msd_file}' u (\$1*0.5):(\$2) via a,b" > $fitgp
 		    echo $slope $intercept
 		    # Compute the effective diffusion coefficient, normalised 
 		    # by the diffusion of a self-propelled particle
-		    deff=$(python -c "print ${slope}/4.0/(${v}**2/(2.0*${Dr})) if (${v} > 0) else 0.0")
+		    deff=$(python -c "print ${slope}/4.0/(${v}**2/(2.0*${Dr})) if (${v} > 0 and ${slope} > 0) else 0.0")
 
 		    echo "$deff" > $deff_file
 		fi
@@ -100,6 +100,7 @@ fit [${tmin}:${tmax}] f(x) '${msd_file}' u (\$1*0.5):(\$2) via a,b" > $fitgp
 	    fi
 	    pe=$(python -c "print '%.3f' % ($pe + $pe_inc)")
 	done
+	rm -r "${out_path}"
     fi
     d=$(python -c "print '%.3f' % ($d + $d_inc)")
 done
