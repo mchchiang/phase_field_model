@@ -64,6 +64,8 @@ int jcellup(PhaseFieldModel* model, int j);
 int jcelldown(PhaseFieldModel* model, int j);
 double centralDiff(PhaseFieldModel* model, int i, int j, int iu, int id,
 		   int ju, int jd, double** field);
+double laplacian(PhaseFieldModel* model, int i, int j, int iu, int id,
+		 int ju, int jd, double** field);
 double gradient(PhaseFieldModel* model, int i, int j, int u, int d,
 		int comp, double** field);
 double upwind(PhaseFieldModel* model, int i, int j, int uu, int u,

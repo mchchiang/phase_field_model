@@ -105,8 +105,8 @@ void initCellsFromFile(PhaseFieldModel* model, char* cmFile,
   while (fgets(line, sizeof(line), fcm) != NULL) {
     nvar = sscanf(line, "%d %lf %lf %lf %lf", &index, &xcm, &ycm, &vx, &vy);
     if (nvar == 3 || nvar == 5) {
-      x = (int)(xcm-clx/2);
-      y = (int)(ycm-cly/2);
+      x = (int) round(xcm-clx/2.0);
+      y = (int) round(ycm-cly/2.0);
       cell = createCell(x, y, clx, cly, model->Dr, 
 			model->phi0/2.0, index+seed);
       if (nvar == 5) {
@@ -145,7 +145,7 @@ void run(PhaseFieldModel* model, int nsteps) {
     double phi; 
     int clx, cly, x, y, cx, cy, get;
     int i, j, k;
-
+    
     // Compute the auxilliary field
     for (i = 0; i < model->numOfCells; i++) {
       cell = model->cells[i];
@@ -163,7 +163,7 @@ void run(PhaseFieldModel* model, int nsteps) {
 	}
       }
     }
-
+    
 #pragma omp parallel default(none) shared(model) private(i, cell) 
 {
 
@@ -224,7 +224,7 @@ void updateCellField(PhaseFieldModel* model, Cell* cell) {
       
       // Cahn-Hilliard term
       cahnHilliard = model->kappa *
-	centralDiff(model, i, j, iu, id, ju, jd, cellField) +
+	laplacian(model, i, j, iu, id, ju, jd, cellField) +
 	model->alpha * phi * (model->phi0 - phi) * (phi - 0.5 * model->phi0);
 
       // Volume term
@@ -351,9 +351,16 @@ inline int jcelldown(PhaseFieldModel* model, int j) {
 }
 
 inline double centralDiff(PhaseFieldModel* model, int i, int j, int iu, int id,
-		   int ju, int jd, double** field) {
+			  int ju, int jd, double** field) {
   return field[iu][j] + field[id][j] + field[i][ju] + field[i][jd] -
     4.0 * field[i][j];
+}
+
+inline double laplacian(PhaseFieldModel* model, int i, int j, int iu, int id,
+			int ju, int jd, double** field) {
+  return (4.0 * (field[iu][j] + field[id][j] + field[i][ju] + field[i][jd]) +
+	  field[iu][ju] + field[iu][jd] + field[id][ju] + field[id][jd] -
+	  20.0 * field[i][j]) / 6.0;
 }
 
 inline double gradient(PhaseFieldModel* model, int i, int j, int u, int d,

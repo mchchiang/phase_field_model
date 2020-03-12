@@ -18,8 +18,10 @@ PRG_SUFFIX =
 # 0 = no armadillo and 1 = with armadillo
 HAS_ARMA := 1
 
-ODIR := ../bin/obj/
-EDIR := ../bin/exe/
+#ODIR := ../bin/obj/
+#EDIR := ../bin/exe/
+ODIR := ../new_bin/obj/
+EDIR := ../new_bin/exe/
 
 SRC_C := cell.c phase_field_model.c array.c image.c overlap.c dump.c dump_cm.c dump_bulk_cm.c dump_field.c dump_cell_field.c dump_gyration.c dump_neighbour.c dump_energy.c dump_overlap.c dump_overlap_field.c dump_index_field.c random_mtwister.c
 SRC_CXX := neighbour.cpp
