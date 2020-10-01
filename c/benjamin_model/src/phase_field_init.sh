@@ -29,9 +29,9 @@ function get_rand(){
 #}
 
 # Set the model parameters
-ncells=100 # 100
-ncell_x=10 # 10
-ncell_y=10 # 10
+ncells=400 # 100
+ncell_x=20 # 10
+ncell_y=20 # 10
 confine_radius=8.0 # 8.0
 init_radius=7.0 # 7.0
 ideal_radius=12.0 # 12.0

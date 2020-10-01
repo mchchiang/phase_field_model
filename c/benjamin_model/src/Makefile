@@ -1,15 +1,15 @@
 
 CC := gcc
 # CC := gcc-9
-CFLAGS := -Wall -Wshadow -Winline -O3 -std=c11 -fopenmp
+CFLAGS := -Wall -Wshadow -Winline -O3 -std=c11 -fopenmp -flto
 #CFLAGS := -Wall -Wshadow -Winline -O3 -std=c11
 
 CXX := g++
 # CXX := g++-9
-CXXFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11
+CXXFLAGS := -Wall -Wshadow -Winline -O3 -std=c++11 -flto
 
 INC := -I../../mtwister/ -I../../arralloc/
-LFLAGS := -lm -lgomp
+LFLAGS := -lm -lgomp -flto -O3
 #LFLAGS := -lm
 
 PRG_SUFFIX_FLAG := 0
@@ -20,8 +20,8 @@ HAS_ARMA := 1
 
 #ODIR := ../bin/obj/
 #EDIR := ../bin/exe/
-ODIR := ../new_bin/obj/
-EDIR := ../new_bin/exe/
+ODIR := ../new_bin2/obj/
+EDIR := ../new_bin2/exe/
 
 SRC_C := cell.c phase_field_model.c array.c image.c overlap.c dump.c dump_cm.c dump_bulk_cm.c dump_field.c dump_cell_field.c dump_gyration.c dump_neighbour.c dump_energy.c dump_overlap.c dump_overlap_field.c dump_index_field.c random_mtwister.c
 SRC_CXX := neighbour.cpp
